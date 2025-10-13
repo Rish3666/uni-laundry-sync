@@ -1,47 +1,36 @@
-import { useState } from "react";
-import { Plus, Shirt, Wind, Sparkles, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Shirt, Wind, Sparkles, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import OrderModal from "@/components/OrderModal";
 
 const Home = () => {
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const services = [
     {
-      id: "wash",
-      name: "Wash & Fold",
+      id: "laundry",
+      name: "Laundry",
       icon: Shirt,
-      description: "Regular washing and folding",
+      description: "Wash & fold service",
       color: "from-blue-500 to-blue-600",
     },
     {
-      id: "dry-clean",
-      name: "Dry Cleaning",
-      icon: Sparkles,
-      description: "Professional dry cleaning",
-      color: "from-purple-500 to-purple-600",
-    },
-    {
-      id: "iron",
-      name: "Ironing",
+      id: "pressing",
+      name: "Pressing",
       icon: Wind,
-      description: "Press and iron only",
+      description: "Iron and press",
       color: "from-orange-500 to-orange-600",
     },
     {
-      id: "full-service",
-      name: "Full Service",
-      icon: Package,
-      description: "Complete care package",
-      color: "from-green-500 to-green-600",
+      id: "dry-cleaning",
+      name: "Dry Cleaning",
+      icon: Sparkles,
+      description: "Professional dry clean",
+      color: "from-purple-500 to-purple-600",
     },
   ];
 
   const handleServiceClick = (serviceId: string) => {
-    setSelectedService(serviceId);
-    setShowOrderModal(true);
+    navigate(`/categories?service=${serviceId}`);
   };
 
   return (
@@ -57,39 +46,36 @@ const Home = () => {
           </p>
         </div>
 
-        {/* Quick Order Button */}
-        <Card className="p-6 bg-gradient-primary text-white shadow-elevated border-0 cursor-pointer hover:scale-[1.02] transition-transform"
-          onClick={() => setShowOrderModal(true)}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold mb-1">New Order</h2>
-              <p className="text-white/90 text-sm">Start a laundry request</p>
-            </div>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
-              <Plus className="w-7 h-7" />
-            </div>
+        {/* Quick Start Card */}
+        <Card className="p-6 bg-gradient-primary text-white shadow-elevated border-0">
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold">Welcome!</h2>
+            <p className="text-white/90 text-sm">
+              Select a service below to start your laundry order
+            </p>
           </div>
         </Card>
 
-        {/* Service Categories */}
+        {/* Service Selection */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Select Service</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {services.map((service) => {
+          <h3 className="text-lg font-semibold">Select Service Type</h3>
+          <div className="grid grid-cols-1 gap-3">{services.map((service) => {
               const Icon = service.icon;
               return (
                 <Card
                   key={service.id}
-                  className="p-4 cursor-pointer hover:shadow-elevated transition-all hover:scale-[1.02] border-2 border-transparent hover:border-primary"
+                  className="p-5 cursor-pointer hover:shadow-elevated transition-all hover:scale-[1.02] border-2 border-transparent hover:border-primary"
                   onClick={() => handleServiceClick(service.id)}
                 >
-                  <div className="space-y-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center`}>
-                      <Icon className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-14 h-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center shrink-0`}
+                    >
+                      <Icon className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm">{service.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-base">{service.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         {service.description}
                       </p>
                     </div>
@@ -118,15 +104,6 @@ const Home = () => {
           </div>
         </Card>
       </div>
-
-      <OrderModal 
-        open={showOrderModal} 
-        onClose={() => {
-          setShowOrderModal(false);
-          setSelectedService(null);
-        }}
-        defaultService={selectedService}
-      />
     </div>
   );
 };
