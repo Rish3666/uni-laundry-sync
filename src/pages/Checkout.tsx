@@ -47,46 +47,16 @@ const Checkout = () => {
 
     setLoading(true);
 
-    try {
+    // Simulate API call (replace with actual n8n webhook)
+    setTimeout(() => {
       const orderId = `ORD-${Date.now()}`;
-      const orderData = {
-        orderId,
-        studentId: formData.studentId,
-        studentName: formData.studentName,
-        mobileNo: formData.mobileNo,
-        serviceType,
-        category,
-        items: cartItems,
-        inTime: new Date().toISOString(),
-        status: "Submitted",
-      };
-
-      const response = await fetch(
-        "http://localhost:5678/webhook-test/251a1dbb-a6ed-4f07-b56b-bde724968f15",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit order");
-      }
-
       toast.success("Order submitted successfully!", {
         description: `Order ID: ${orderId}`,
         icon: <QrCode className="w-4 h-4" />,
       });
-      navigate("/orders");
-    } catch (error) {
-      console.error("Error submitting order:", error);
-      toast.error("Failed to submit order. Please try again.");
-    } finally {
       setLoading(false);
-    }
+      navigate("/orders");
+    }, 1500);
   };
 
   const removeItem = (itemId: string) => {
