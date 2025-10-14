@@ -17,7 +17,11 @@ interface CartItem {
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, serviceType, category } = location.state as {
+  const { cart, serviceType, category } = (location.state || {
+    cart: [],
+    serviceType: "",
+    category: "",
+  }) as {
     cart: CartItem[];
     serviceType: string;
     category: string;
