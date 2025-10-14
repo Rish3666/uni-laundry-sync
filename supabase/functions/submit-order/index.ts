@@ -16,17 +16,19 @@ serve(async (req) => {
     
     console.log('Proxying order to n8n:', orderData);
 
+    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
+    if (!webhookUrl) {
+      throw new Error('N8N_WEBHOOK_URL not configured');
+    }
+
     // Forward request to n8n webhook
-    const response = await fetch(
-      'http://localhost:5678/webhook-test/251a1dbb-a6ed-4f07-b56b-bde724968f15',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      }
-    );
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    });
 
     if (!response.ok) {
       throw new Error(`n8n webhook returned ${response.status}`);
