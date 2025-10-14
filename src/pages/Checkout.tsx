@@ -66,11 +66,12 @@ const Checkout = () => {
       };
 
       const response = await fetch(
-        "http://localhost:5678/webhook-test/251a1dbb-a6ed-4f07-b56b-bde724968f15",
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-order`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify(orderData),
         }
