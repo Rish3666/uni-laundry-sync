@@ -179,6 +179,20 @@ const Home = () => {
     }
   };
 
+  const getItemEmoji = (itemId: string) => {
+    if (itemId.includes("socks")) return "🧦";
+    if (itemId.includes("lungi") || itemId.includes("dhoti")) return "🩳";
+    if (itemId.includes("pant") || itemId.includes("trouser")) return "👖";
+    if (itemId.includes("shirt") || itemId.includes("tshirt")) return "👕";
+    if (itemId.includes("sweater")) return "🧥";
+    if (itemId.includes("saree")) return "🥻";
+    if (itemId.includes("towel")) return "🧖";
+    if (itemId.includes("bed") || itemId.includes("sheet") || itemId.includes("quilt") || itemId.includes("blanket")) return "🛏️";
+    if (itemId.includes("pillow")) return "🛏️";
+    if (itemId.includes("curtain")) return "🪟";
+    return "👕";
+  };
+
   const items = categoryItems[selectedCategory] || [];
 
   return (
@@ -256,7 +270,7 @@ const Home = () => {
                   <Card key={item.id} className="p-4 flex items-center justify-between hover:shadow-card transition-all">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                        <span className="text-2xl">👕</span>
+                        <span className="text-2xl">{getItemEmoji(item.id)}</span>
                       </div>
                       <div>
                         <h3 className="font-medium">{item.name}</h3>
