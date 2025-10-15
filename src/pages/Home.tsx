@@ -220,9 +220,23 @@ const Home = () => {
 
         {/* Progress Indicator */}
         <div className="flex items-center justify-center gap-2">
-          <div className={`w-3 h-3 rounded-full transition-colors ${step === "category" ? "bg-primary" : "bg-muted"}`} />
-          <div className={`w-3 h-3 rounded-full transition-colors ${step === "items" ? "bg-primary" : "bg-muted"}`} />
-          <div className={`w-3 h-3 rounded-full transition-colors ${step === "checkout" ? "bg-primary" : "bg-muted"}`} />
+          <button
+            onClick={() => setStep("category")}
+            className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${step === "category" ? "bg-primary" : "bg-muted hover:bg-muted/80"}`}
+            aria-label="Go to category selection"
+          />
+          <button
+            onClick={() => selectedCategory && setStep("items")}
+            disabled={!selectedCategory}
+            className={`w-3 h-3 rounded-full transition-all ${selectedCategory ? "hover:scale-125 cursor-pointer" : "cursor-not-allowed opacity-50"} ${step === "items" ? "bg-primary" : "bg-muted hover:bg-muted/80"}`}
+            aria-label="Go to item selection"
+          />
+          <button
+            onClick={() => cart.length > 0 && setStep("checkout")}
+            disabled={cart.length === 0}
+            className={`w-3 h-3 rounded-full transition-all ${cart.length > 0 ? "hover:scale-125 cursor-pointer" : "cursor-not-allowed opacity-50"} ${step === "checkout" ? "bg-primary" : "bg-muted hover:bg-muted/80"}`}
+            aria-label="Go to checkout"
+          />
         </div>
 
         {/* Step 1: Category Selection */}
