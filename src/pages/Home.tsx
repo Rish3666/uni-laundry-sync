@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, User, Bed, Package, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
+import { Sparkles, Shirt, BedDouble, Package, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +28,9 @@ const Home = () => {
 
   const categories = [
     { id: "others", name: "Others", icon: Package, color: "from-amber-500 to-amber-600" },
-    { id: "mens-wear", name: "Men's Wear", icon: User, color: "from-blue-500 to-blue-600" },
-    { id: "womens-wear", name: "Women's Wear", icon: Users, color: "from-pink-500 to-pink-600" },
-    { id: "bedding", name: "Bedding", icon: Bed, color: "from-purple-500 to-purple-600" },
+    { id: "mens-wear", name: "Men's Wear", icon: Shirt, color: "from-blue-500 to-blue-600" },
+    { id: "womens-wear", name: "Women's Wear", icon: Sparkles, color: "from-pink-500 to-pink-600" },
+    { id: "bedding", name: "Bedding", icon: BedDouble, color: "from-purple-500 to-purple-600" },
   ];
 
   const categoryItems: Record<string, { id: string; name: string }[]> = {
