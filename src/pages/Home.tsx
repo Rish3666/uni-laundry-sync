@@ -183,13 +183,25 @@ const Home = () => {
     if (itemId.includes("socks")) return "🧦";
     if (itemId.includes("lungi") || itemId.includes("dhoti")) return "🩳";
     if (itemId.includes("pant") || itemId.includes("trouser")) return "👖";
+    if (itemId.includes("shorts")) return "🩳";
     if (itemId.includes("shirt") || itemId.includes("tshirt")) return "👕";
     if (itemId.includes("sweater")) return "🧥";
     if (itemId.includes("saree")) return "🥻";
+    if (itemId.includes("blouse")) return "👚";
+    if (itemId.includes("top")) return "👚";
+    if (itemId.includes("salwar") || itemId.includes("kameez")) return "🥻";
+    if (itemId.includes("frock") || itemId.includes("skirt")) return "👗";
+    if (itemId.includes("kurta")) return "👔";
+    if (itemId.includes("pyjama")) return "🩱";
     if (itemId.includes("towel")) return "🧖";
-    if (itemId.includes("bed") || itemId.includes("sheet") || itemId.includes("quilt") || itemId.includes("blanket")) return "🛏️";
+    if (itemId.includes("quilt") || itemId.includes("blanket")) return "🛏️";
     if (itemId.includes("pillow")) return "🛏️";
+    if (itemId.includes("bed") || itemId.includes("sheet")) return "🛏️";
+    if (itemId.includes("hanky")) return "🧻";
     if (itemId.includes("curtain")) return "🪟";
+    if (itemId.includes("table-cloth")) return "🍽️";
+    if (itemId.includes("cushion")) return "🛋️";
+    if (itemId.includes("napkin")) return "🧻";
     return "👕";
   };
 
