@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Phone, Mail, LogOut, Moon, Sun, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -7,28 +7,79 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState({
-    studentId: "CS-2025-001",
-    studentName: "Rahul Kumar",
-    mobileNo: "9876543210",
-    email: "rahul.kumar@university.edu",
+    studentId: "",
+    studentName: "",
+    mobileNo: "",
+    email: "",
   });
 
-  const handleSaveProfile = () => {
-    toast.success("Profile updated successfully!");
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile) {
+        setProfileData({
+          studentId: profile.student_id || "",
+          studentName: profile.student_name || "",
+          mobileNo: profile.mobile_no || "",
+          email: profile.email || user.email || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          student_id: profileData.studentId,
+          student_name: profileData.studentName,
+          mobile_no: profileData.mobileNo,
+          email: profileData.email,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile");
+    }
   };
 
   const handleExportOrders = () => {
     toast.success("Exporting orders as CSV...");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     toast.info("Logged out successfully");
-    navigate("/");
+    navigate("/auth");
   };
 
   const toggleDarkMode = (checked: boolean) => {
@@ -36,6 +87,14 @@ const Profile = () => {
     document.documentElement.classList.toggle("dark", checked);
     toast.success(checked ? "Dark mode enabled" : "Light mode enabled");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-8rem)] p-4 pb-24 animate-fade-in">

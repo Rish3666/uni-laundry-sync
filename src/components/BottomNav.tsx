@@ -4,6 +4,11 @@ import { Link, useLocation } from "react-router-dom";
 const BottomNav = () => {
   const location = useLocation();
 
+  // Hide nav on auth page
+  if (location.pathname === "/auth") {
+    return null;
+  }
+
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/orders", icon: ShoppingBag, label: "Orders" },
