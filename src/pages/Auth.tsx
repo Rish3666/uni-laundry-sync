@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Mail, Lock, User, Phone, IdCard } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ const Auth = () => {
     email: "",
     password: "",
     studentName: "",
+    studentId: "",
     mobileNo: "",
   });
 
@@ -26,77 +27,88 @@ const Auth = () => {
         navigate("/");
       }
     });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.email || !formData.password) {
+      toast.error("Email and password are required");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            student_name: formData.studentName,
-            mobile_no: formData.mobileNo,
-          },
-        },
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return;
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          student_name: formData.studentName,
+          student_id: formData.studentId,
+          mobile_no: formData.mobileNo,
+        }
       }
+    });
 
-      if (data.user) {
-        toast.success("Account created successfully! Please login.");
-        setIsLogin(true);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred during signup");
-    } finally {
-      setLoading(false);
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+
+    toast.success("Account created successfully! You can now login.");
+    setIsLogin(true);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.email || !formData.password) {
+      toast.error("Email and password are required");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+    setLoading(false);
 
-      if (data.user) {
-        toast.success("Logged in successfully!");
-        navigate("/");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred during login");
-    } finally {
-      setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+
+    toast.success("Logged in successfully!");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-muted">
-      <Card className="w-full max-w-md p-8 shadow-elevated">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-gradient-primary mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl">👕</span>
-          </div>
-          <h1 className="text-2xl font-bold">Laundry Service</h1>
-          <p className="text-muted-foreground mt-2">
-            {isLogin ? "Welcome back!" : "Create your account"}
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-subtle">
+      <Card className="w-full max-w-md p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">Laundry Service</h1>
+          <p className="text-muted-foreground">
+            {isLogin ? "Welcome back! Please login." : "Create your account"}
           </p>
         </div>
 
@@ -109,12 +121,24 @@ const Auth = () => {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="studentName"
-                    type="text"
-                    required
                     value={formData.studentName}
                     onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
                     className="h-11 pl-10"
                     placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="studentId">Student ID</Label>
+                <div className="relative">
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="studentId"
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    className="h-11 pl-10"
+                    placeholder="Enter your student ID"
                   />
                 </div>
               </div>
@@ -125,12 +149,10 @@ const Auth = () => {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="mobileNo"
-                    type="tel"
-                    required
                     value={formData.mobileNo}
                     onChange={(e) => setFormData({ ...formData, mobileNo: e.target.value })}
                     className="h-11 pl-10"
-                    placeholder="Enter mobile number"
+                    placeholder="Enter your mobile number"
                   />
                 </div>
               </div>
@@ -144,11 +166,11 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="h-11 pl-10"
                 placeholder="Enter your email"
+                required
               />
             </div>
           </div>
@@ -160,26 +182,25 @@ const Auth = () => {
               <Input
                 id="password"
                 type="password"
-                required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="h-11 pl-10"
                 placeholder="Enter your password"
-                minLength={6}
+                required
               />
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full h-11 bg-gradient-primary"
+          <Button 
+            type="submit" 
+            className="w-full h-11 bg-gradient-primary" 
             disabled={loading}
           >
-            {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}
+            {loading ? "Please wait..." : (isLogin ? "Login" : "Sign Up")}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="text-center">
           <button
             onClick={() => setIsLogin(!isLogin)}
             className="text-sm text-primary hover:underline"
