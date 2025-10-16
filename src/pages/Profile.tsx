@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Phone, Mail, LogOut, Moon, Sun, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [profileData, setProfileData] = useState({
     studentId: "CS-2025-001",
@@ -26,6 +28,7 @@ const Profile = () => {
 
   const handleLogout = () => {
     toast.info("Logged out successfully");
+    navigate("/");
   };
 
   const toggleDarkMode = (checked: boolean) => {
