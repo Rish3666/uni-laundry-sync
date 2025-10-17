@@ -7,9 +7,10 @@ import Home from "./pages/Home";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
-import CategorySelection from "./pages/CategorySelection";
-import ItemSelection from "./pages/ItemSelection";
+import QRScanner from "./pages/QRScanner";
+import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -25,11 +26,12 @@ const App = () => (
         <div className="min-h-screen bg-background">
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/qr-scanner" element={<QRScanner />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/categories" element={<ProtectedRoute><CategorySelection /></ProtectedRoute>} />
-            <Route path="/items" element={<ProtectedRoute><ItemSelection /></ProtectedRoute>} />
+            <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

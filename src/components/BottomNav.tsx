@@ -1,16 +1,17 @@
-import { Home, ShoppingBag, User } from "lucide-react";
+import { Home, ShoppingCart, ShoppingBag, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const BottomNav = () => {
   const location = useLocation();
 
-  // Hide nav on auth page
-  if (location.pathname === "/auth") {
+  // Hide nav on auth, qr-scanner, and admin pages
+  if (location.pathname === "/auth" || location.pathname === "/qr-scanner" || location.pathname === "/admin") {
     return null;
   }
 
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
+    { path: "/cart", icon: ShoppingCart, label: "Cart" },
     { path: "/orders", icon: ShoppingBag, label: "Orders" },
     { path: "/profile", icon: User, label: "Profile" },
   ];

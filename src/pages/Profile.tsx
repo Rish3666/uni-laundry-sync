@@ -1,222 +1,120 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Mail, LogOut, Moon, Sun, Download } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { LogOut, QrCode, Download } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import QRCode from "qrcode.react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
+  const { isAdmin } = useUserRole();
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState({
-    studentId: "",
-    studentName: "",
-    mobileNo: "",
-    email: "",
-  });
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({ student_name: "", mobile_no: "", student_id: "" });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile) {
-        setProfileData({
-          studentId: profile.student_id || "",
-          studentName: profile.student_name || "",
-          mobileNo: profile.mobile_no || "",
-          email: profile.email || user.email || "",
-        });
-      }
+      if (!user) { navigate("/auth"); return; }
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      setProfile(data);
+      if (data) setFormData({ student_name: data.student_name || "", mobile_no: data.mobile_no || "", student_id: data.student_id || "" });
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveProfile = async () => {
+  const handleUpdateProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          student_id: profileData.studentId,
-          student_name: profileData.studentName,
-          mobile_no: profileData.mobileNo,
-          email: profileData.email,
-        })
-        .eq("user_id", user.id);
-
+      const { error } = await supabase.from("profiles").update(formData).eq("user_id", user.id);
       if (error) throw error;
-      toast.success("Profile updated successfully!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update profile");
+      toast.success("Profile updated");
+      setEditing(false);
+      fetchProfile();
+    } catch (error) {
+      toast.error("Update failed");
     }
   };
 
-  const handleExportOrders = () => {
-    toast.success("Exporting orders as CSV...");
+  const downloadQR = () => {
+    const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
+    if (canvas) {
+      const url = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `smartwash-${profile.customer_number}.png`;
+      link.href = url;
+      link.click();
+    }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.info("Logged out successfully");
+    toast.success("Logged out");
     navigate("/auth");
   };
 
-  const toggleDarkMode = (checked: boolean) => {
-    setDarkMode(checked);
-    document.documentElement.classList.toggle("dark", checked);
-    toast.success(checked ? "Dark mode enabled" : "Light mode enabled");
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] p-4 pb-24 animate-fade-in">
-      <div className="max-w-2xl mx-auto space-y-4">
-        {/* Header */}
-        <h1 className="text-2xl font-bold">Profile & Settings</h1>
+    <div className="min-h-screen bg-background pb-24">
+      <div className="bg-gradient-primary shadow-elevated">
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold text-primary-foreground">Profile</h1>
+          <p className="text-primary-foreground/80 text-sm">{isAdmin ? "Admin Account" : "Customer Account"}</p>
+        </div>
+      </div>
 
-        {/* Stats Card */}
-        <Card className="p-6 bg-gradient-primary text-white shadow-elevated border-0">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-              <User className="w-8 h-8" />
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {!isAdmin && profile?.qr_code && (
+          <div className="bg-card rounded-lg p-6 shadow-card text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-primary mb-2">
+              <QrCode className="w-5 h-5" /><h2 className="text-lg font-semibold">Your QR Code</h2>
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold">{profileData.studentName}</h2>
-              <p className="text-white/90 text-sm">{profileData.studentId}</p>
+            <div className="inline-block p-4 bg-white rounded-lg">
+              <QRCode id="qr-code" value={profile.qr_code} size={200} level="H" includeMargin />
             </div>
+            <p className="font-mono font-semibold text-primary">{profile.customer_number}</p>
+            <Button onClick={downloadQR} variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />Download</Button>
           </div>
-          
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-white/20">
-            <div className="text-center">
-              <p className="text-2xl font-bold">5</p>
-              <p className="text-xs text-white/80 mt-0.5">Active</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">12</p>
-              <p className="text-xs text-white/80 mt-0.5">Total</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">2</p>
-              <p className="text-xs text-white/80 mt-0.5">Ready</p>
-            </div>
-          </div>
-        </Card>
+        )}
 
-        {/* Profile Form */}
-        <Card className="p-6 space-y-4">
-          <h3 className="font-semibold text-lg">Personal Information</h3>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                value={profileData.studentId}
-                onChange={(e) => setProfileData({ ...profileData, studentId: e.target.value })}
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="studentName">Full Name</Label>
-              <Input
-                id="studentName"
-                value={profileData.studentName}
-                onChange={(e) => setProfileData({ ...profileData, studentName: e.target.value })}
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="mobileNo">Mobile Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="mobileNo"
-                  value={profileData.mobileNo}
-                  onChange={(e) => setProfileData({ ...profileData, mobileNo: e.target.value })}
-                  className="h-11 pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={profileData.email}
-                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                  className="h-11 pl-10"
-                />
-              </div>
-            </div>
-
-            <Button onClick={handleSaveProfile} className="w-full h-11 bg-gradient-primary">
-              Save Changes
-            </Button>
-          </div>
-        </Card>
-
-        {/* Appearance */}
-        <Card className="p-6">
-          <h3 className="font-semibold text-lg mb-4">Appearance</h3>
+        <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {darkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-              <div>
-                <p className="font-medium">Dark Mode</p>
-                <p className="text-sm text-muted-foreground">Switch to dark theme</p>
+            <h2 className="text-lg font-semibold">Personal Info</h2>
+            {!editing && <Button onClick={() => setEditing(true)} variant="outline" size="sm">Edit</Button>}
+          </div>
+          {editing ? (
+            <div className="space-y-4">
+              <div><Label>Name</Label><Input value={formData.student_name} onChange={e => setFormData({...formData, student_name: e.target.value})} /></div>
+              <div><Label>Mobile</Label><Input value={formData.mobile_no} onChange={e => setFormData({...formData, mobile_no: e.target.value})} /></div>
+              <div><Label>ID</Label><Input value={formData.student_id} onChange={e => setFormData({...formData, student_id: e.target.value})} /></div>
+              <div className="flex gap-2">
+                <Button onClick={handleUpdateProfile} className="flex-1">Save</Button>
+                <Button onClick={() => setEditing(false)} variant="outline" className="flex-1">Cancel</Button>
               </div>
             </div>
-            <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
-          </div>
-        </Card>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Name</span><span className="font-medium">{profile?.student_name || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Email</span><span className="font-medium">{profile?.email}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profile?.mobile_no || "Not set"}</span></div>
+            </div>
+          )}
+        </div>
 
-        {/* Actions */}
-        <Card className="p-6 space-y-3">
-          <h3 className="font-semibold text-lg mb-2">Actions</h3>
-          
-          <Button variant="outline" className="w-full h-11 justify-start" onClick={handleExportOrders}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Order History (CSV)
-          </Button>
-
-          <Button variant="destructive" className="w-full h-11 justify-start" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </Card>
+        {isAdmin && <Button onClick={() => navigate("/admin")} className="w-full">Admin Dashboard</Button>}
+        <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
       </div>
     </div>
   );

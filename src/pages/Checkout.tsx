@@ -1,264 +1,196 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, QrCode, Loader2, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ArrowLeft, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 interface CartItem {
   id: string;
+  itemId: string;
   name: string;
+  emoji: string;
+  category: string;
+  serviceType: string;
   quantity: number;
+  price: number;
 }
+
+type PaymentMethod = "cash" | "card" | "upi";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { cart, serviceType, category } = (location.state || {
-    cart: [],
-    serviceType: "",
-    category: "",
-  }) as {
-    cart: CartItem[];
-    serviceType: string;
-    category: string;
+  const [loading, setLoading] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    fetchProfile();
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    } else {
+      toast.error("Your cart is empty");
+      navigate("/cart");
+    }
+  }, [navigate]);
+
+  const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setProfile(data);
+    }
   };
 
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    studentId: "",
-    studentName: "",
-    mobileNo: "",
-  });
+  const getTotalAmount = () => {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
 
-  const [cartItems, setCartItems] = useState<CartItem[]>(cart || []);
+  const getTotalItems = () => {
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.studentId || !formData.studentName || !formData.mobileNo) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    if (!/^[0-9]{10}$/.test(formData.mobileNo)) {
-      toast.error("Please enter a valid 10-digit mobile number");
+    
+    if (cart.length === 0) {
+      toast.error("Your cart is empty");
       return;
     }
 
     setLoading(true);
 
     try {
-      const orderId = `ORD-${Date.now()}`;
-      const orderData = {
-        orderId,
-        studentId: formData.studentId,
-        studentName: formData.studentName,
-        mobileNo: formData.mobileNo,
-        serviceType,
-        category,
-        items: cartItems,
-        inTime: new Date().toISOString(),
-        status: "Submitted",
-      };
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-order`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit order");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user || !profile) {
+        toast.error("Please log in to place an order");
+        return;
       }
 
-      toast.success("Order submitted successfully!", {
-        description: `Order ID: ${orderId}`,
-        icon: <QrCode className="w-4 h-4" />,
+      const totalAmount = getTotalAmount();
+      const orderNumber = `LND${Date.now().toString().slice(-8)}`;
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          customer_name: profile.student_name,
+          customer_phone: profile.mobile_no,
+          customer_email: profile.email,
+          student_id: profile.student_id,
+          total_amount: totalAmount,
+          status: "pending",
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "cash" ? "pending" : "paid",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        item_id: item.itemId,
+        service_type_id: item.id.split("-")[1],
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+        service_name: item.serviceType,
+        item_name: item.name,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      await supabase.functions.invoke("submit-order", {
+        body: {
+          order_id: order.id,
+          order_number: orderNumber,
+          customer_name: profile.student_name,
+          customer_phone: profile.mobile_no,
+          items: cart,
+          total_amount: totalAmount,
+          payment_method: paymentMethod,
+        },
       });
+
+      toast.success(`Order placed! #${orderNumber}`);
+      localStorage.removeItem("cart");
       navigate("/orders");
     } catch (error) {
-      console.error("Error submitting order:", error);
-      toast.error("Failed to submit order. Please try again.");
+      console.error("Error:", error);
+      toast.error("Failed to place order");
     } finally {
       setLoading(false);
     }
   };
 
-  const removeItem = (itemId: string) => {
-    setCartItems(cartItems.filter((item) => item.id !== itemId));
-    toast.success("Item removed from cart");
-  };
+  const paymentMethods = [
+    { id: "cash", name: "Cash", icon: Banknote, emoji: "💵" },
+    { id: "card", name: "Card", icon: CreditCard, emoji: "💳" },
+    { id: "upi", name: "UPI", icon: Smartphone, emoji: "📱" },
+  ];
 
-  const updateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      removeItem(itemId);
-      return;
-    }
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const getTotalItems = () => {
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  };
-
-  if (!cart || cart.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md">
-          <p className="text-muted-foreground mb-4">Your cart is empty</p>
-          <Button onClick={() => navigate("/")}>Go to Home</Button>
-        </Card>
-      </div>
-    );
+  if (!profile) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
   }
 
   return (
-    <div className="min-h-screen pb-24 animate-fade-in">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ChevronLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-background pb-24">
+      <div className="sticky top-0 z-10 bg-gradient-primary shadow-elevated">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/cart")} className="rounded-full text-primary-foreground hover:bg-white/20">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold">Checkout</h1>
-            <p className="text-sm text-muted-foreground">
-              {getTotalItems()} items in cart
-            </p>
+          <div>
+            <h1 className="text-xl font-semibold text-primary-foreground">Payment</h1>
+            <p className="text-sm text-primary-foreground/80">{getTotalItems()} items • ₹{getTotalAmount()}</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 max-w-2xl mx-auto space-y-6">
-        {/* Cart Items */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">Order Items</h3>
-            <Badge variant="secondary" className="capitalize">
-              {serviceType.replace("-", " ")}
-            </Badge>
-          </div>
-          {cartItems.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between gap-3 p-3 bg-secondary/50 rounded-lg"
-            >
-              <div className="flex-1">
-                <p className="font-medium">{item.name}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                >
-                  -
-                </Button>
-                <span className="w-8 text-center font-medium">
-                  {item.quantity}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                >
-                  +
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => removeItem(item.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <div className="bg-card rounded-lg p-4 shadow-card space-y-3">
+          <h2 className="font-semibold">Order Summary</h2>
+          {cart.slice(0, 3).map(item => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span className="text-muted-foreground">{item.emoji} {item.name} × {item.quantity}</span>
+              <span className="font-medium">₹{item.price * item.quantity}</span>
             </div>
           ))}
-        </Card>
+          {cart.length > 3 && <p className="text-xs text-muted-foreground">+{cart.length - 3} more</p>}
+          <div className="border-t pt-3 flex justify-between font-semibold">
+            <span>Total</span><span className="text-primary">₹{getTotalAmount()}</span>
+          </div>
+        </div>
 
-        {/* Student Information Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Card className="p-6 space-y-4">
-            <h3 className="font-semibold text-lg">Student Information</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                placeholder="e.g., CS-2025-001"
-                value={formData.studentId}
-                onChange={(e) =>
-                  setFormData({ ...formData, studentId: e.target.value })
-                }
-                className="h-11"
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-card rounded-lg p-4 shadow-card space-y-4">
+            <h2 className="font-semibold">Select Payment</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {paymentMethods.map(method => (
+                <button key={method.id} type="button" onClick={() => setPaymentMethod(method.id as PaymentMethod)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${paymentMethod === method.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                  <span className="text-3xl">{method.emoji}</span>
+                  <span className="text-sm font-medium">{method.name}</span>
+                </button>
+              ))}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="studentName">Student Name</Label>
-              <Input
-                id="studentName"
-                placeholder="Enter your full name"
-                value={formData.studentName}
-                onChange={(e) =>
-                  setFormData({ ...formData, studentName: e.target.value })
-                }
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="mobileNo">Mobile Number</Label>
-              <Input
-                id="mobileNo"
-                type="tel"
-                placeholder="10-digit mobile number"
-                value={formData.mobileNo}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    mobileNo: e.target.value.replace(/\D/g, "").slice(0, 10),
-                  })
-                }
-                className="h-11"
-              />
-            </div>
-          </Card>
-
-          <Button
-            type="submit"
-            className="w-full h-12 bg-gradient-primary text-base font-semibold"
-            disabled={loading || cartItems.length === 0}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Submitting Order...
-              </>
-            ) : (
-              `Submit Order (${getTotalItems()} items)`
-            )}
+          </div>
+          <Button type="submit" className="w-full h-14 text-lg font-semibold shadow-elevated" disabled={loading} size="lg">
+            {loading ? "Processing..." : `Pay ₹${getTotalAmount()} & Place Order`}
           </Button>
         </form>
       </div>
