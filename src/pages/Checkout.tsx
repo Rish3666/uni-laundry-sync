@@ -163,6 +163,41 @@ const Checkout = () => {
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <div className="bg-card rounded-lg p-4 shadow-card space-y-3">
+          <h2 className="font-semibold">Customer Information</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Student Name</span>
+              <span className="font-medium">{profile?.student_name || "Not set"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Student ID</span>
+              <span className="font-medium">{profile?.student_id || "Not set"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mobile Number</span>
+              <span className="font-medium">{profile?.mobile_no || "Not set"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Email</span>
+              <span className="font-medium">{profile?.email || "Not set"}</span>
+            </div>
+          </div>
+          {(!profile?.student_name || !profile?.mobile_no) && (
+            <div className="mt-3 p-3 bg-destructive/10 rounded-lg">
+              <p className="text-sm text-destructive">Please update your profile with complete information before placing an order.</p>
+              <Button 
+                type="button" 
+                variant="link" 
+                className="h-auto p-0 text-sm text-destructive hover:text-destructive/80"
+                onClick={() => navigate("/profile")}
+              >
+                Go to Profile →
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card rounded-lg p-4 shadow-card space-y-3">
           <h2 className="font-semibold">Order Summary</h2>
           {cart.slice(0, 3).map(item => (
             <div key={item.id} className="flex justify-between text-sm">
