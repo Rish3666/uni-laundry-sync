@@ -8,6 +8,7 @@ import { LogOut, QrCode, Download } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -122,6 +123,14 @@ const Profile = () => {
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profile?.mobile_no || "Not set"}</span></div>
             </div>
           )}
+        </div>
+
+        <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
+          <h2 className="text-lg font-semibold">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Theme</span>
+            <ThemeToggle />
+          </div>
         </div>
 
         {isAdmin && <Button onClick={() => navigate("/admin")} className="w-full">Admin Dashboard</Button>}
