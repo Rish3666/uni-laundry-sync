@@ -23,34 +23,45 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
     studentId: "",
     studentName: "",
     mobileNo: "",
   });
 
-  // Fetch profile data on mount to pre-fill form
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    fetchUserProfile();
+  }, []);
 
-      const { data: profile } = await supabase
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setUserId(user.id);
+
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("student_id, student_name, mobile_no")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (profile) {
+      if (profileData) {
+        setProfile(profileData);
         setFormData({
-          studentId: profile.student_id || "",
-          studentName: profile.student_name || "",
-          mobileNo: profile.mobile_no || "",
+          studentId: profileData.student_id || "",
+          studentName: profileData.student_name || "",
+          mobileNo: profileData.mobile_no || "",
         });
       }
-    };
-    fetchProfile();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   const categories = [
     { id: "others", name: "Others", icon: Package, color: "from-amber-500 to-amber-600" },
@@ -146,6 +157,12 @@ const Home = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!userId) {
+      toast.error("Please log in to submit an order");
+      navigate("/auth");
+      return;
+    }
+
     if (!formData.studentId || !formData.studentName || !formData.mobileNo) {
       toast.error("Please fill all fields");
       return;
@@ -156,54 +173,47 @@ const Home = () => {
       return;
     }
 
+    if (cart.length === 0) {
+      toast.error("Please add items to cart");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please login to submit an order");
-        navigate("/auth");
-        return;
-      }
-
-      // Get user profile for email
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("email, customer_number")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
       // Generate order number
-      const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create order in database
+      // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          user_id: user.id,
+          user_id: userId,
           order_number: orderNumber,
           customer_name: formData.studentName,
           customer_phone: formData.mobileNo,
-          customer_email: profile?.email,
+          customer_email: profile?.email || null,
           student_id: formData.studentId,
           status: "pending",
           payment_status: "pending",
+          total_amount: 0,
           notes: `Category: ${selectedCategory}`,
-          total_amount: 0, // Will be calculated after items are added
         })
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw new Error("Failed to create order");
+      }
 
-      // Insert order items
+      // Create order items
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         item_name: item.name,
-        service_name: "Laundry",
+        service_name: "Regular Wash",
         quantity: item.quantity,
-        unit_price: 0, // Placeholder - prices can be added later
+        unit_price: 0,
         total_price: 0,
       }));
 
@@ -211,21 +221,18 @@ const Home = () => {
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items error:", itemsError);
+        await supabase.from("orders").delete().eq("id", order.id);
+        throw new Error("Failed to add items to order");
+      }
 
       toast.success("Order submitted successfully!", {
-        description: (
-          <div className="space-y-1">
-            <p>Order #{orderNumber}</p>
-            <p className="text-xs">Delivery QR: {order.delivery_qr_code}</p>
-          </div>
-        ),
+        description: `Order #${orderNumber}. Delivery QR: ${order.delivery_qr_code}`,
         icon: <QrCode className="w-4 h-4" />,
-        duration: 5000,
       });
 
-      // Navigate to orders page to show the order
-      setTimeout(() => navigate("/orders"), 1500);
+      navigate("/orders");
 
       // Reset form
       setStep("category");
