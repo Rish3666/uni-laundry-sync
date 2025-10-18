@@ -201,11 +201,13 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivered_at: string | null
+          delivery_qr_code: string | null
           id: string
           notes: string | null
           order_number: string
           payment_method: string | null
           payment_status: string | null
+          picked_up_at: string | null
           ready_at: string | null
           sms_sent: boolean | null
           status: string
@@ -220,11 +222,13 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivered_at?: string | null
+          delivery_qr_code?: string | null
           id?: string
           notes?: string | null
           order_number: string
           payment_method?: string | null
           payment_status?: string | null
+          picked_up_at?: string | null
           ready_at?: string | null
           sms_sent?: boolean | null
           status?: string
@@ -239,11 +243,13 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           delivered_at?: string | null
+          delivery_qr_code?: string | null
           id?: string
           notes?: string | null
           order_number?: string
           payment_method?: string | null
           payment_status?: string | null
+          picked_up_at?: string | null
           ready_at?: string | null
           sms_sent?: boolean | null
           status?: string
@@ -353,6 +359,10 @@ export type Database = {
     }
     Functions: {
       generate_customer_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_delivery_qr_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

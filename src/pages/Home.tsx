@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Shirt, BedDouble, Package, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface CartItem {
   id: string;
@@ -16,6 +18,7 @@ interface CartItem {
 type Step = "category" | "items" | "checkout";
 
 const Home = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -25,6 +28,29 @@ const Home = () => {
     studentName: "",
     mobileNo: "",
   });
+
+  // Fetch profile data on mount to pre-fill form
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("student_id, student_name, mobile_no")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile) {
+        setFormData({
+          studentId: profile.student_id || "",
+          studentName: profile.student_name || "",
+          mobileNo: profile.mobile_no || "",
+        });
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const categories = [
     { id: "others", name: "Others", icon: Package, color: "from-amber-500 to-amber-600" },
@@ -133,44 +159,78 @@ const Home = () => {
     setLoading(true);
 
     try {
-      const orderId = `ORD-${Date.now()}`;
-      const orderData = {
-        orderId,
-        studentId: formData.studentId,
-        studentName: formData.studentName,
-        mobileNo: formData.mobileNo,
-        serviceType: "laundry",
-        category: selectedCategory,
-        items: cart,
-        inTime: new Date().toISOString(),
-        status: "Submitted",
-      };
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-order`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit order");
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please login to submit an order");
+        navigate("/auth");
+        return;
       }
 
+      // Get user profile for email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, customer_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Generate order number
+      const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+
+      // Create order in database
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          customer_name: formData.studentName,
+          customer_phone: formData.mobileNo,
+          customer_email: profile?.email,
+          student_id: formData.studentId,
+          status: "pending",
+          payment_status: "pending",
+          notes: `Category: ${selectedCategory}`,
+          total_amount: 0, // Will be calculated after items are added
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Insert order items
+      const orderItems = cart.map((item) => ({
+        order_id: order.id,
+        item_name: item.name,
+        service_name: "Laundry",
+        quantity: item.quantity,
+        unit_price: 0, // Placeholder - prices can be added later
+        total_price: 0,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
       toast.success("Order submitted successfully!", {
-        description: `Order ID: ${orderId}`,
+        description: (
+          <div className="space-y-1">
+            <p>Order #{orderNumber}</p>
+            <p className="text-xs">Delivery QR: {order.delivery_qr_code}</p>
+          </div>
+        ),
         icon: <QrCode className="w-4 h-4" />,
+        duration: 5000,
       });
+
+      // Navigate to orders page to show the order
+      setTimeout(() => navigate("/orders"), 1500);
 
       // Reset form
       setStep("category");
       setSelectedCategory("");
       setCart([]);
-      setFormData({ studentId: "", studentName: "", mobileNo: "" });
     } catch (error) {
       console.error("Error submitting order:", error);
       toast.error("Failed to submit order. Please try again.");
