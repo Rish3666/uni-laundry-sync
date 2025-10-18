@@ -117,6 +117,7 @@ const Profile = () => {
           ) : (
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Name</span><span className="font-medium">{profile?.student_name || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Student ID</span><span className="font-medium">{profile?.student_id || "Not set"}</span></div>
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Email</span><span className="font-medium">{profile?.email}</span></div>
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profile?.mobile_no || "Not set"}</span></div>
             </div>
