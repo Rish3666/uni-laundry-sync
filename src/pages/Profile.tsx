@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogOut, QrCode, Download } from "lucide-react";
 import { toast } from "sonner";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const Profile = () => {
@@ -48,13 +48,23 @@ const Profile = () => {
   };
 
   const downloadQR = () => {
-    const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
-    if (canvas) {
-      const url = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `smartwash-${profile.customer_number}.png`;
-      link.href = url;
-      link.click();
+    const svg = document.getElementById("qr-code");
+    if (svg) {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `smartwash-${profile.customer_number}.png`;
+        link.href = url;
+        link.click();
+      };
+      img.src = "data:image/svg+xml;base64," + btoa(svgData);
     }
   };
 
@@ -82,7 +92,7 @@ const Profile = () => {
               <QrCode className="w-5 h-5" /><h2 className="text-lg font-semibold">Your QR Code</h2>
             </div>
             <div className="inline-block p-4 bg-white rounded-lg">
-              <QRCode id="qr-code" value={profile.qr_code} size={200} level="H" includeMargin />
+              <QRCodeSVG id="qr-code" value={profile.qr_code} size={200} level="H" includeMargin />
             </div>
             <p className="font-mono font-semibold text-primary">{profile.customer_number}</p>
             <Button onClick={downloadQR} variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />Download</Button>
