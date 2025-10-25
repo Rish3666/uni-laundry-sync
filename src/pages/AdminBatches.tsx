@@ -8,7 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Search, QrCode, Package, CheckCircle2 } from "lucide-react";
+import { Loader2, Search, QrCode, Package, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Order {
   id: string;
@@ -53,6 +63,7 @@ const AdminBatches = () => {
   const [totalOrders, setTotalOrders] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
+  const [batchToComplete, setBatchToComplete] = useState<number | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -151,7 +162,13 @@ const AdminBatches = () => {
     }
   };
 
-  const markBatchComplete = async (batchNumber: number) => {
+  const confirmMarkBatchComplete = (batchNumber: number) => {
+    setBatchToComplete(batchNumber);
+  };
+
+  const markBatchComplete = async () => {
+    if (!batchToComplete) return;
+    
     try {
       // Update all orders in the batch to ready status
       const { error } = await supabase
@@ -161,20 +178,44 @@ const AdminBatches = () => {
           status: "ready",
           ready_at: new Date().toISOString()
         })
-        .eq("batch_number", batchNumber);
+        .eq("batch_number", batchToComplete);
 
       if (error) throw error;
 
       // Send notifications via edge function
       await supabase.functions.invoke("notify-batch-complete", {
-        body: { batchNumber },
+        body: { batchNumber: batchToComplete },
       });
 
-      toast.success(`Batch ${batchNumber} marked as completed! Notifications sent.`);
+      toast.success(`Batch ${batchToComplete} marked as completed! Notifications sent.`);
+      setBatchToComplete(null);
       fetchBatches();
     } catch (error) {
       console.error("Error completing batch:", error);
       toast.error("Failed to complete batch");
+      setBatchToComplete(null);
+    }
+  };
+
+  const unmarkBatchComplete = async (batchNumber: number) => {
+    try {
+      // Revert all orders in the batch back to pending
+      const { error } = await supabase
+        .from("orders")
+        .update({ 
+          batch_status: "pending",
+          status: "pending",
+          ready_at: null
+        })
+        .eq("batch_number", batchNumber);
+
+      if (error) throw error;
+
+      toast.success(`Batch ${batchNumber} unmarked and reverted to pending.`);
+      fetchBatches();
+    } catch (error) {
+      console.error("Error unmarking batch:", error);
+      toast.error("Failed to unmark batch");
     }
   };
 
@@ -342,18 +383,30 @@ const AdminBatches = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Checkbox
-                          id={`batch-${batch.batch_number}`}
-                          checked={batch.batch_status === "completed"}
-                          onCheckedChange={() => markBatchComplete(batch.batch_number)}
-                          disabled={batch.batch_status === "completed"}
-                        />
-                        <label
-                          htmlFor={`batch-${batch.batch_number}`}
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Mark Complete
-                        </label>
+                        {batch.batch_status === "completed" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unmarkBatchComplete(batch.batch_number)}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Unmark
+                          </Button>
+                        ) : (
+                          <>
+                            <Checkbox
+                              id={`batch-${batch.batch_number}`}
+                              checked={false}
+                              onCheckedChange={() => confirmMarkBatchComplete(batch.batch_number)}
+                            />
+                            <label
+                              htmlFor={`batch-${batch.batch_number}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              Mark Complete
+                            </label>
+                          </>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -383,6 +436,25 @@ const AdminBatches = () => {
             })
           )}
         </div>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={batchToComplete !== null} onOpenChange={() => setBatchToComplete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mark Batch {batchToComplete} as Complete?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will mark all orders in this batch as "Ready for Pickup" and send notifications to all customers. 
+                Students will see their laundry is ready in their orders page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={markBatchComplete}>
+                Confirm & Send Notifications
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
