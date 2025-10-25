@@ -120,6 +120,12 @@ const Home = () => {
   };
 
   const addToCart = (item: { id: string; name: string }) => {
+    const totalItems = getTotalItems();
+    if (totalItems >= 6) {
+      toast.error("Maximum 6 items allowed per day");
+      return;
+    }
+    
     const existingItem = cart.find((i) => i.id === item.id);
     if (existingItem) {
       setCart(cart.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i)));
@@ -139,6 +145,16 @@ const Home = () => {
       removeItem(itemId);
       return;
     }
+    
+    const currentItem = cart.find((i) => i.id === itemId);
+    if (currentItem && newQuantity > currentItem.quantity) {
+      const totalItems = getTotalItems();
+      if (totalItems >= 6) {
+        toast.error("Maximum 6 items allowed per day");
+        return;
+      }
+    }
+    
     setCart(cart.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
   };
 
@@ -395,6 +411,9 @@ const Home = () => {
             <div className="space-y-3">
               {items.map((item) => {
                 const cartItem = cart.find((i) => i.id === item.id);
+                const totalItems = getTotalItems();
+                const isMaxReached = totalItems >= 6;
+                
                 return (
                   <Card key={item.id} className="p-4 flex items-center justify-between hover:shadow-card transition-all">
                     <div className="flex items-center gap-3">
@@ -421,6 +440,7 @@ const Home = () => {
                           size="icon" 
                           className="h-9 w-9" 
                           onClick={() => updateQuantity(item.id, cartItem.quantity + 1)}
+                          disabled={isMaxReached}
                         >
                           +
                         </Button>
@@ -431,6 +451,7 @@ const Home = () => {
                         size="icon" 
                         className="h-9 w-9" 
                         onClick={() => addToCart(item)}
+                        disabled={isMaxReached}
                       >
                         +
                       </Button>
