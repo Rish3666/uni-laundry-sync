@@ -135,7 +135,10 @@ const Orders = () => {
     );
   }
 
-  // Only show pickup orders
+  // Separate orders by type
+  const deliveryOrders = filteredOrders.filter(o => 
+    o.status === "awaiting_receipt" && o.delivery_qr_code
+  );
   const pickupOrders = filteredOrders.filter(o => 
     (o.status === "ready" || o.status === "completed" || o.status === "delivered") && o.pickup_token
   );
@@ -143,7 +146,7 @@ const Orders = () => {
     o.status === "pending" || o.status === "processing"
   );
 
-  const renderOrderCard = (order: Order, showPickupQR: boolean) => {
+  const renderOrderCard = (order: Order, qrType: 'none' | 'delivery' | 'pickup') => {
     const statusConfig = getStatusConfig(order.status);
     const StatusIcon = statusConfig.icon;
     
@@ -155,6 +158,7 @@ const Orders = () => {
           borderLeftColor: order.status === "ready" ? "hsl(var(--success))" :
                           order.status === "processing" ? "hsl(var(--warning))" :
                           order.status === "completed" ? "hsl(var(--muted-foreground))" :
+                          order.status === "awaiting_receipt" ? "hsl(var(--info))" :
                           "hsl(var(--info))"
         }}
       >
@@ -177,10 +181,16 @@ const Orders = () => {
               <p className="text-muted-foreground text-xs">Items</p>
               <p className="font-medium">{getTotalItems(order.order_items)} items</p>
             </div>
-            {showPickupQR && order.pickup_token && (
+            {qrType === 'pickup' && order.pickup_token && (
               <div>
                 <p className="text-muted-foreground text-xs">Pickup Token</p>
                 <p className="font-mono text-xs">{order.pickup_token}</p>
+              </div>
+            )}
+            {qrType === 'delivery' && order.delivery_qr_code && (
+              <div>
+                <p className="text-muted-foreground text-xs">Delivery Code</p>
+                <p className="font-mono text-xs">{order.delivery_qr_code}</p>
               </div>
             )}
           </div>
@@ -204,7 +214,7 @@ const Orders = () => {
           </div>
 
           {/* Actions */}
-          {showPickupQR && order.pickup_token && (
+          {qrType === 'pickup' && order.pickup_token && (
             <Button 
               variant="default" 
               className="w-full" 
@@ -213,6 +223,17 @@ const Orders = () => {
             >
               <QrCode className="w-4 h-4 mr-2" />
               View Pickup QR Code
+            </Button>
+          )}
+          {qrType === 'delivery' && order.delivery_qr_code && (
+            <Button 
+              variant="secondary" 
+              className="w-full" 
+              size="sm"
+              onClick={() => handleViewQR(order)}
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              View Delivery QR Code
             </Button>
           )}
         </div>
@@ -268,6 +289,24 @@ const Orders = () => {
           </div>
         </div>
 
+        {/* Delivery QR Codes Section */}
+        {deliveryOrders.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-px bg-info/30 flex-1" />
+              <h2 className="text-lg font-semibold text-info flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Awaiting Delivery
+              </h2>
+              <div className="h-px bg-info/30 flex-1" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center mb-2">
+              Show this QR code to admin when delivering your laundry
+            </p>
+            {deliveryOrders.map(order => renderOrderCard(order, 'delivery'))}
+          </div>
+        )}
+
         {/* Pickup QR Codes Section */}
         {pickupOrders.length > 0 && (
           <div className="space-y-3">
@@ -282,7 +321,7 @@ const Orders = () => {
             <p className="text-sm text-muted-foreground text-center mb-2">
               Show the pickup QR code when collecting your laundry
             </p>
-            {pickupOrders.map(order => renderOrderCard(order, true))}
+            {pickupOrders.map(order => renderOrderCard(order, 'pickup'))}
           </div>
         )}
 
@@ -297,7 +336,7 @@ const Orders = () => {
               </h2>
               <div className="h-px bg-border flex-1" />
             </div>
-            {inProgressOrders.map(order => renderOrderCard(order, false))}
+            {inProgressOrders.map(order => renderOrderCard(order, 'none'))}
           </div>
         )}
 
@@ -312,41 +351,85 @@ const Orders = () => {
         <Dialog open={showQR} onOpenChange={setShowQR}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Pickup QR Code</DialogTitle>
+              <DialogTitle>
+                {selectedOrder?.status === "ready" ? "Pickup QR Code" : "Delivery QR Code"}
+              </DialogTitle>
             </DialogHeader>
-            {selectedOrder && selectedOrder.status === "ready" && selectedOrder.pickup_token && (
+            {selectedOrder && (
               <div className="space-y-4">
-                <div className="bg-success/10 p-3 rounded-lg border border-success/20">
-                  <p className="text-sm text-success font-medium text-center flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Your laundry is ready for pickup!
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg flex items-center justify-center">
-                  <QRCodeSVG 
-                    value={selectedOrder.pickup_token} 
-                    size={200}
-                    level="H"
-                    includeMargin
-                  />
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Order Number:</span>
-                    <span className="font-medium">{selectedOrder.order_number}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pickup Token:</span>
-                    <span className="font-mono text-xs">{selectedOrder.pickup_token}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Student ID:</span>
-                    <span className="font-medium">{selectedOrder.student_id}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Show this QR code to collect your laundry
-                </p>
+                {/* Pickup QR */}
+                {selectedOrder.status === "ready" && selectedOrder.pickup_token && (
+                  <>
+                    <div className="bg-success/10 p-3 rounded-lg border border-success/20">
+                      <p className="text-sm text-success font-medium text-center flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Your laundry is ready for pickup!
+                      </p>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg flex items-center justify-center">
+                      <QRCodeSVG 
+                        value={selectedOrder.pickup_token} 
+                        size={200}
+                        level="H"
+                        includeMargin
+                      />
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Number:</span>
+                        <span className="font-medium">{selectedOrder.order_number}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Pickup Token:</span>
+                        <span className="font-mono text-xs">{selectedOrder.pickup_token}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Student ID:</span>
+                        <span className="font-medium">{selectedOrder.student_id}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Show this QR code to collect your laundry
+                    </p>
+                  </>
+                )}
+
+                {/* Delivery QR */}
+                {selectedOrder.status === "awaiting_receipt" && selectedOrder.delivery_qr_code && (
+                  <>
+                    <div className="bg-info/10 p-3 rounded-lg border border-info/20">
+                      <p className="text-sm text-info font-medium text-center flex items-center justify-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Show this to admin when delivering laundry
+                      </p>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg flex items-center justify-center">
+                      <QRCodeSVG 
+                        value={selectedOrder.delivery_qr_code} 
+                        size={200}
+                        level="H"
+                        includeMargin
+                      />
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Number:</span>
+                        <span className="font-medium">{selectedOrder.order_number}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Delivery Code:</span>
+                        <span className="font-mono text-xs">{selectedOrder.delivery_qr_code}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Student ID:</span>
+                        <span className="font-medium">{selectedOrder.student_id}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Show this QR code when delivering your laundry
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </DialogContent>
