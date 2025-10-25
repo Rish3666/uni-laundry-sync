@@ -64,35 +64,22 @@ const AdminLogin = () => {
       return;
     }
 
-    // Check if user already has admin role
-    const { data: existingRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", signInData.user.id)
-      .maybeSingle();
-
-    if (existingRole?.role === "admin") {
-      setLoading(false);
-      toast.success("Welcome Admin!");
-      navigate("/admin/batches");
-      return;
-    }
-
-    // Update or insert admin role
-    const { error: roleError } = await supabase
-      .from("user_roles")
-      .upsert({
-        user_id: signInData.user.id,
-        role: "admin",
-      }, {
-        onConflict: "user_id"
-      });
+    // Grant admin role via edge function (bypasses RLS)
+    const { data: grantData, error: grantError } = await supabase.functions.invoke(
+      "grant-admin-access",
+      {
+        body: {
+          userId: signInData.user.id,
+          adminPassword: formData.adminPassword,
+        },
+      }
+    );
 
     setLoading(false);
 
-    if (roleError) {
-      console.error("Role error:", roleError);
-      toast.error("Failed to set admin role. Please contact support.");
+    if (grantError || !grantData?.success) {
+      console.error("Grant error:", grantError || grantData);
+      toast.error(grantData?.error || "Failed to grant admin access");
       return;
     }
 
