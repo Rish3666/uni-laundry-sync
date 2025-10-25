@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, Shield } from "lucide-react";
 
-const ADMIN_PASSWORD = "admin123"; // Change this to your desired admin password
+// Admin password is securely stored in backend secrets
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -44,12 +44,6 @@ const AdminLogin = () => {
       return;
     }
 
-    // Check admin password first
-    if (formData.adminPassword !== ADMIN_PASSWORD) {
-      toast.error("Invalid admin password");
-      return;
-    }
-
     setLoading(true);
 
     // Try to sign in
@@ -64,7 +58,7 @@ const AdminLogin = () => {
       return;
     }
 
-    // Grant admin role via edge function (bypasses RLS)
+    // Grant admin role via edge function (validates password server-side)
     const { data: grantData, error: grantError } = await supabase.functions.invoke(
       "grant-admin-access",
       {

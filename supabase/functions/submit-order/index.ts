@@ -1,28 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface OrderItem {
-  itemId: string;
-  name: string;
-  serviceType: string;
-  quantity: number;
-  price: number;
-}
-
-interface OrderPayload {
-  order_id: string;
-  order_number: string;
-  customer_name: string;
-  customer_phone: string;
-  items: OrderItem[];
-  total_amount: number;
-  payment_method: string;
-}
+const orderSchema = z.object({
+  order_id: z.string().uuid("Invalid order ID format"),
+  order_number: z.string().regex(/^LND\d{8}$/, "Invalid order number format"),
+  customer_name: z.string().trim().min(2).max(100),
+  customer_phone: z.string().regex(/^\d{10}$/, "Invalid phone number format"),
+  items: z.array(z.object({
+    itemId: z.string().uuid(),
+    name: z.string().max(200),
+    serviceType: z.string().max(50),
+    quantity: z.number().int().positive().max(100),
+    price: z.number().positive().max(100000)
+  })).min(1).max(100),
+  total_amount: z.number().positive().max(1000000),
+  payment_method: z.string().max(50)
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -53,15 +52,16 @@ serve(async (req) => {
       );
     }
 
-    const payload: OrderPayload = await req.json();
-
-    // Validate required fields
-    if (!payload.order_id || !payload.order_number) {
+    // Validate input
+    const validationResult = orderSchema.safeParse(await req.json());
+    if (!validationResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Invalid input', details: validationResult.error.issues }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
+
+    const payload = validationResult.data;
 
     // Verify order belongs to authenticated user
     const { data: order, error: orderError } = await supabase
@@ -86,10 +86,7 @@ serve(async (req) => {
 
     // Validate total amount matches database
     if (Math.abs(order.total_amount - payload.total_amount) > 0.01) {
-      console.error('Amount mismatch', { 
-        db: order.total_amount, 
-        payload: payload.total_amount 
-      });
+      console.error('Order validation failed', { operation: 'amount_check' });
       return new Response(
         JSON.stringify({ error: 'Order amount mismatch' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -104,12 +101,8 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize data for webhook (log only non-sensitive info)
-    console.log('Processing order:', { 
-      order_id: payload.order_id, 
-      order_number: payload.order_number,
-      item_count: payload.items.length 
-    });
+    // Log only minimal info
+    console.log('Order processing started', { item_count: payload.items.length });
 
     const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
     if (!webhookUrl) {
@@ -136,14 +129,14 @@ serve(async (req) => {
     }
 
     const result = await response.json().catch(() => ({}));
-    console.log('Order processed:', { order_id: payload.order_id, success: true });
+    console.log('Order processed successfully');
 
     return new Response(
       JSON.stringify({ success: true, data: result }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error processing order:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Request processing failed', { error_type: error instanceof Error ? error.name : 'unknown' });
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

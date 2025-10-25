@@ -1,17 +1,18 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_PASSWORD = "admin123"; // Change this to match your admin password
+const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD");
 
-interface GrantAdminRequest {
-  userId: string;
-  adminPassword: string;
-}
+const grantAdminSchema = z.object({
+  userId: z.string().uuid("Invalid user ID format"),
+  adminPassword: z.string().min(8).max(100),
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -24,12 +25,24 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { userId, adminPassword }: GrantAdminRequest = await req.json();
+    // Validate input
+    const validationResult = grantAdminSchema.safeParse(await req.json());
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.issues }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
-    console.log("Processing admin access request for user:", userId);
+    const { userId, adminPassword } = validationResult.data;
+
+    console.log("Admin access request initiated");
 
     // Verify admin password
-    if (adminPassword !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
       return new Response(
         JSON.stringify({ error: "Invalid admin password" }),
         {
@@ -67,7 +80,7 @@ serve(async (req) => {
       .eq("user_id", userId);
 
     if (deleteError) {
-      console.error("Error deleting existing role:", deleteError);
+      console.error("Database operation failed", { operation: "delete_role" });
     }
 
     // Insert new admin role
@@ -79,7 +92,7 @@ serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("Error granting admin role:", insertError);
+      console.error("Database operation failed", { operation: "insert_role" });
       return new Response(
         JSON.stringify({ error: "Failed to grant admin role" }),
         {
@@ -89,7 +102,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Admin role granted successfully to user:", userId);
+    console.log("Admin role granted successfully");
 
     return new Response(
       JSON.stringify({
@@ -102,9 +115,9 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error in grant-admin-access function:", error);
+    console.error("Request processing failed", { error_type: error.name });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
