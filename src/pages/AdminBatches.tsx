@@ -70,7 +70,7 @@ const AdminBatches = () => {
         .from("orders")
         .select(`
           *,
-          profiles!inner (
+          profiles!orders_user_id_fkey (
             gender
           )
         `)
