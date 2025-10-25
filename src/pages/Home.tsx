@@ -194,10 +194,11 @@ const Home = () => {
     // Check day restrictions based on gender
     const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     
-    if (today === 0) {
-      toast.error("Laundry collection is not available on Sunday");
-      return;
-    }
+    // Sunday restriction disabled for testing
+    // if (today === 0) {
+    //   toast.error("Laundry collection is not available on Sunday");
+    //   return;
+    // }
 
     if (!profile?.gender) {
       toast.error("Please update your gender in profile settings");
