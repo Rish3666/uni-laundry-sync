@@ -68,8 +68,8 @@ const AdminDeliveryScanner = () => {
           return;
         }
 
-        // Check if order is pending (not yet received)
-        if (order.status !== "pending") {
+        // Check if order is awaiting receipt
+        if (order.status !== "awaiting_receipt") {
           toast.error(`Order already ${order.status}`);
           setLoading(false);
           setTimeout(() => {
@@ -103,18 +103,31 @@ const AdminDeliveryScanner = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase
+      // First update order status to pending and set received_at
+      const { error: updateError } = await supabase
         .from("orders")
         .update({
-          status: "ready",
-          ready_at: new Date().toISOString(),
+          status: "pending",
+          received_at: new Date().toISOString(),
           scanned_by: user?.id,
         })
         .eq("id", scannedOrder.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      toast.success("Laundry received! Marked as ready ✅");
+      // Then invoke the submit-order function for n8n processing
+      await supabase.functions.invoke("submit-order", {
+        body: {
+          order_id: scannedOrder.id,
+          order_number: scannedOrder.order_number,
+          customer_name: scannedOrder.customer_name,
+          customer_phone: scannedOrder.customer_phone,
+          total_amount: scannedOrder.total_amount,
+          payment_method: scannedOrder.payment_method,
+        },
+      });
+
+      toast.success("Laundry received! Order confirmed ✅");
       setScannedOrder(null);
       setLoading(false);
       
@@ -168,7 +181,7 @@ const AdminDeliveryScanner = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-semibold text-warning">Pending Receipt</p>
+                  <p className="font-semibold text-warning">Awaiting Receipt</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

@@ -5,6 +5,8 @@ import { ArrowLeft, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { QRCodeSVG } from "qrcode.react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CartItem {
   id: string;
@@ -25,6 +27,7 @@ const Checkout = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [profile, setProfile] = useState<any>(null);
+  const [orderCreated, setOrderCreated] = useState<any>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -89,7 +92,7 @@ const Checkout = () => {
           student_id: profile.student_id,
           room_number: profile.room_number,
           total_amount: totalAmount,
-          status: "pending",
+          status: "awaiting_receipt",
           payment_method: paymentMethod,
           payment_status: paymentMethod === "cash" ? "pending" : "paid",
         })
@@ -115,21 +118,9 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      await supabase.functions.invoke("submit-order", {
-        body: {
-          order_id: order.id,
-          order_number: orderNumber,
-          customer_name: profile.student_name,
-          customer_phone: profile.mobile_no,
-          items: cart,
-          total_amount: totalAmount,
-          payment_method: paymentMethod,
-        },
-      });
-
-      toast.success(`Order placed! #${orderNumber}`);
+      toast.success("Order created! Please show this QR to admin");
+      setOrderCreated(order);
       localStorage.removeItem("cart");
-      navigate("/orders");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to place order");
@@ -146,6 +137,51 @@ const Checkout = () => {
 
   if (!profile) {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  }
+
+  if (orderCreated) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <div className="sticky top-0 z-10 bg-gradient-primary shadow-elevated">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <h1 className="text-xl font-semibold text-primary-foreground text-center">Order Created</h1>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-center">Show This QR to Admin</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex justify-center bg-white p-6 rounded-lg">
+                <QRCodeSVG value={orderCreated.delivery_qr_code} size={200} />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="font-semibold text-lg">Order #{orderCreated.order_number}</p>
+                <p className="text-muted-foreground">Total: ₹{orderCreated.total_amount}</p>
+                <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
+                  <p className="text-sm text-warning font-medium">
+                    ⚠️ Take your laundry to admin and show this QR code
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Your order will be confirmed once admin scans this code
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Button onClick={() => navigate("/orders")} className="w-full" size="lg">
+                  View My Orders
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                  Back to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
