@@ -72,6 +72,40 @@ const AdminDashboard = () => {
     setExpandedBatches(newExpanded);
   };
 
+  const markAllDelivered = async (batchNumber: number) => {
+    try {
+      const batch = batchGroups.find(b => b.batch_number === batchNumber);
+      if (!batch) return;
+
+      // Get all order IDs in this batch that are not already delivered or cancelled
+      const orderIds = batch.orders
+        .filter(o => o.status !== "delivered" && o.status !== "cancelled")
+        .map(o => o.id);
+
+      if (orderIds.length === 0) {
+        toast.info("All orders in this batch are already delivered or cancelled");
+        return;
+      }
+
+      // Update all orders to delivered status
+      const { error } = await supabase
+        .from("orders")
+        .update({ 
+          status: "delivered",
+          delivered_at: new Date().toISOString()
+        })
+        .in("id", orderIds);
+
+      if (error) throw error;
+
+      toast.success(`Marked ${orderIds.length} orders as delivered in Batch ${batchNumber}`);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error marking batch as delivered:", error);
+      toast.error("Failed to mark batch as delivered");
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -300,9 +334,23 @@ const AdminDashboard = () => {
                         {batch.batch_status}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{batch.orders.length} orders</span>
-                      <span className="font-semibold text-foreground">₹{batch.total_amount}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{batch.orders.length} orders</span>
+                        <span className="font-semibold text-foreground">₹{batch.total_amount}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAllDelivered(batch.batch_number);
+                        }}
+                        className="ml-2"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark All Delivered
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
