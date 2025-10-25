@@ -213,9 +213,9 @@ const Home = () => {
         return;
       }
     } else if (profile.gender === "female") {
-      // Girls: Tuesday (2), Thursday (4), Saturday (6)
-      if (![2, 4, 6].includes(today)) {
-        toast.error("Girls can only submit laundry on Tuesday, Thursday, and Saturday");
+      // Girls: Tuesday (2), Thursday (4), Saturday (6), Sunday (0) - Sunday added for testing
+      if (![0, 2, 4, 6].includes(today)) {
+        toast.error("Girls can only submit laundry on Tuesday, Thursday, Saturday, and Sunday");
         return;
       }
     }
