@@ -75,6 +75,7 @@ const Checkout = () => {
       
       if (!user || !profile) {
         toast.error("Please log in to place an order");
+        setLoading(false);
         return;
       }
 
@@ -99,6 +100,9 @@ const Checkout = () => {
       };
 
       localStorage.setItem("pendingOrder", JSON.stringify(pendingOrder));
+      
+      console.log("Pending order created:", pendingOrder);
+      console.log("QR Code value:", deliveryQrCode);
 
       toast.success("QR Generated! Scan it to confirm your order");
       setOrderCreated(pendingOrder);
