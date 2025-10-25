@@ -170,6 +170,22 @@ const AdminBatches = () => {
     if (!batchToComplete) return;
     
     try {
+      // First, ensure all orders in the batch have delivery QR codes
+      const { data: ordersToUpdate, error: fetchError } = await supabase
+        .from("orders")
+        .select("id, delivery_qr_code")
+        .eq("batch_number", batchToComplete);
+
+      if (fetchError) throw fetchError;
+
+      // Generate QR codes for orders that don't have them
+      for (const order of ordersToUpdate || []) {
+        if (!order.delivery_qr_code) {
+          const { error: qrError } = await supabase.rpc("generate_delivery_qr_code");
+          if (qrError) console.error("Error generating QR:", qrError);
+        }
+      }
+
       // Update all orders in the batch to ready status
       const { error } = await supabase
         .from("orders")
@@ -187,7 +203,7 @@ const AdminBatches = () => {
         body: { batchNumber: batchToComplete },
       });
 
-      toast.success(`Batch ${batchToComplete} marked as completed! Notifications sent.`);
+      toast.success(`Batch ${batchToComplete} marked as completed! Notifications sent with QR codes.`);
       setBatchToComplete(null);
       fetchBatches();
     } catch (error) {

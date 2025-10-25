@@ -39,17 +39,36 @@ const AdminQRScanner = () => {
       scanner.clear();
 
       try {
-        // Try to find order by order_number or delivery_qr_code
+        // Find order by delivery_qr_code
         const { data: order, error } = await supabase
           .from("orders")
           .select("*")
-          .or(`order_number.eq.${decodedText},delivery_qr_code.eq.${decodedText}`)
-          .single();
+          .eq("delivery_qr_code", decodedText)
+          .maybeSingle();
 
-        if (error || !order) {
-          toast.error("Order not found");
+        if (error) {
+          console.error("Database error:", error);
+          toast.error("Database error");
           setLoading(false);
-          // Restart scanner
+          setTimeout(() => {
+            scanner.render(onScanSuccess, () => {});
+          }, 2000);
+          return;
+        }
+
+        if (!order) {
+          toast.error("Invalid delivery QR code");
+          setLoading(false);
+          setTimeout(() => {
+            scanner.render(onScanSuccess, () => {});
+          }, 2000);
+          return;
+        }
+
+        // Check if order is ready for pickup
+        if (order.status !== "ready") {
+          toast.error(`Order is ${order.status}, not ready for pickup`);
+          setLoading(false);
           setTimeout(() => {
             scanner.render(onScanSuccess, () => {});
           }, 2000);
@@ -57,7 +76,7 @@ const AdminQRScanner = () => {
         }
 
         setScannedOrder(order);
-        toast.success("Order scanned successfully!");
+        toast.success("Valid delivery QR code scanned!");
       } catch (error) {
         console.error("QR scan error:", error);
         toast.error("Failed to process QR code");
@@ -72,7 +91,7 @@ const AdminQRScanner = () => {
     };
   }, [isAdmin]);
 
-  const markAsReceived = async () => {
+  const markAsDelivered = async () => {
     if (!scannedOrder) return;
 
     try {
@@ -81,15 +100,15 @@ const AdminQRScanner = () => {
       const { error } = await supabase
         .from("orders")
         .update({
-          status: "processing",
-          received_at: new Date().toISOString(),
+          status: "completed",
+          delivered_at: new Date().toISOString(),
           scanned_by: user?.id,
         })
         .eq("id", scannedOrder.id);
 
       if (error) throw error;
 
-      toast.success("Order marked as received!");
+      toast.success("Laundry delivered successfully! ✅");
       setScannedOrder(null);
       setLoading(false);
       
@@ -123,10 +142,10 @@ const AdminQRScanner = () => {
 
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Scan Order QR Code
+            Scan Delivery QR Code
           </h1>
           <p className="text-muted-foreground">
-            Scan the QR code on the order to mark it as received
+            Scan student's QR code to confirm laundry delivery
           </p>
         </div>
 
@@ -136,33 +155,48 @@ const AdminQRScanner = () => {
               <CardTitle>Order Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Order Number</p>
-                <p className="font-semibold">{scannedOrder.order_number}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Number</p>
+                  <p className="font-semibold">{scannedOrder.order_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-semibold text-success">Ready for Pickup</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Customer</p>
-                <p className="font-semibold">{scannedOrder.customer_name}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="font-semibold">{scannedOrder.customer_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-semibold">{scannedOrder.customer_phone}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="font-semibold">{scannedOrder.customer_phone}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Room</p>
-                <p className="font-semibold">{scannedOrder.room_number}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Batch</p>
-                <p className="font-semibold">Batch {scannedOrder.batch_number}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Room</p>
+                  <p className="font-semibold">{scannedOrder.room_number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Batch</p>
+                  <p className="font-semibold">Batch {scannedOrder.batch_number}</p>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="font-semibold text-lg">₹{scannedOrder.total_amount}</p>
               </div>
+              <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                <p className="text-sm text-success font-medium">
+                  ✅ Valid QR Code - Ready for Delivery
+                </p>
+              </div>
               <div className="flex gap-2 pt-4">
-                <Button onClick={markAsReceived} className="flex-1">
-                  Mark as Received
+                <Button onClick={markAsDelivered} className="flex-1" size="lg">
+                  Confirm Delivery
                 </Button>
                 <Button variant="outline" onClick={() => setScannedOrder(null)}>
                   Cancel

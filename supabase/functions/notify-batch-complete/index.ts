@@ -25,10 +25,10 @@ serve(async (req) => {
 
     console.log(`Processing batch ${batchNumber} completion notifications`);
 
-    // Get all orders in this batch
+    // Get all orders in this batch with QR codes
     const { data: orders, error: ordersError } = await supabase
       .from("orders")
-      .select("user_id, customer_name, customer_email, customer_phone")
+      .select("user_id, customer_name, customer_email, customer_phone, order_number, delivery_qr_code")
       .eq("batch_number", batchNumber);
 
     if (ordersError) {
@@ -57,10 +57,12 @@ serve(async (req) => {
       customer: order.customer_name,
       email: order.customer_email,
       phone: order.customer_phone,
-      message: `Your laundry is ready for pickup - Batch ${batchNumber}`,
+      orderNumber: order.order_number,
+      qrCode: order.delivery_qr_code,
+      message: `Your laundry is ready for pickup! Order: ${order.order_number}. Show your QR code (${order.delivery_qr_code}) when collecting. - Batch ${batchNumber}`,
     }));
 
-    console.log("Notifications to send:", notifications);
+    console.log("Notifications with QR codes to send:", notifications);
 
     // Here you would integrate with your notification service
     // Example with SMS:
