@@ -13,6 +13,7 @@ interface CartItem {
   id: string;
   name: string;
   quantity: number;
+  price: number;
 }
 
 type Step = "category" | "items" | "checkout";
@@ -70,47 +71,47 @@ const Home = () => {
     { id: "bedding", name: "Bedding", icon: BedDouble, color: "from-purple-500 to-purple-600" },
   ];
 
-  const categoryItems: Record<string, { id: string; name: string }[]> = {
+  const categoryItems: Record<string, { id: string; name: string; price: number }[]> = {
     "womens-wear": [
-      { id: "blouse", name: "Blouse" },
-      { id: "sweater", name: "Sweater" },
-      { id: "top-regular", name: "Top (Regular)" },
-      { id: "saree", name: "Saree" },
-      { id: "socks", name: "Socks" },
-      { id: "salwar", name: "Salwar" },
-      { id: "shirt-tshirt", name: "Shirt/T-shirt" },
-      { id: "pant", name: "Pant" },
-      { id: "top-long", name: "Top (Long)" },
-      { id: "frock-skirt", name: "Frock/Skirt" },
-      { id: "kameez", name: "Kameez" },
+      { id: "blouse", name: "Blouse", price: 30 },
+      { id: "sweater", name: "Sweater", price: 150 },
+      { id: "top-regular", name: "Top (Regular)", price: 30 },
+      { id: "saree", name: "Saree", price: 75 },
+      { id: "socks", name: "Socks", price: 30 },
+      { id: "salwar", name: "Salwar", price: 30 },
+      { id: "shirt-tshirt", name: "Shirt/T-shirt", price: 30 },
+      { id: "pant", name: "Pant", price: 30 },
+      { id: "top-long", name: "Top (Long)", price: 30 },
+      { id: "frock-skirt", name: "Frock/Skirt", price: 30 },
+      { id: "kameez", name: "Kameez", price: 30 },
     ],
     "mens-wear": [
-      { id: "shorts", name: "Shorts" },
-      { id: "socks", name: "Socks" },
-      { id: "kurta", name: "Kurta" },
-      { id: "sweater", name: "Sweater" },
-      { id: "lungi-dhoti", name: "Lungi/Dhoti" },
-      { id: "shirt-tshirt", name: "Shirt/Tshirt" },
-      { id: "pant-trouser", name: "Pant/Trouser" },
-      { id: "pyjama", name: "Pyjama" },
+      { id: "shorts", name: "Shorts", price: 30 },
+      { id: "socks", name: "Socks", price: 30 },
+      { id: "kurta", name: "Kurta", price: 30 },
+      { id: "sweater", name: "Sweater", price: 60 },
+      { id: "lungi-dhoti", name: "Lungi/Dhoti", price: 50 },
+      { id: "shirt-tshirt", name: "Shirt/Tshirt", price: 30 },
+      { id: "pant-trouser", name: "Pant/Trouser", price: 30 },
+      { id: "pyjama", name: "Pyjama", price: 30 },
     ],
     "bedding": [
-      { id: "towel-hand", name: "Towel - Hand" },
-      { id: "quilt-double", name: "Quilt - Double" },
-      { id: "pillow-cover", name: "Pillow Cover" },
-      { id: "bed-sheet-single", name: "Bed Sheet - Single" },
-      { id: "bedsheet-double", name: "Bedsheet - Double" },
-      { id: "quilt-single", name: "Quilt - Single" },
-      { id: "hanky", name: "Hanky" },
-      { id: "blanket-single", name: "Blanket - Single" },
-      { id: "towel-bath", name: "Towel - Bath" },
-      { id: "blanket-double", name: "Blanket - Double" },
+      { id: "towel-hand", name: "Towel - Hand", price: 30 },
+      { id: "quilt-double", name: "Quilt - Double", price: 300 },
+      { id: "pillow-cover", name: "Pillow Cover", price: 20 },
+      { id: "bed-sheet-single", name: "Bed Sheet - Single", price: 50 },
+      { id: "bedsheet-double", name: "Bedsheet - Double", price: 100 },
+      { id: "quilt-single", name: "Quilt - Single", price: 150 },
+      { id: "hanky", name: "Hanky", price: 10 },
+      { id: "blanket-single", name: "Blanket - Single", price: 150 },
+      { id: "towel-bath", name: "Towel - Bath", price: 30 },
+      { id: "blanket-double", name: "Blanket - Double", price: 300 },
     ],
     "others": [
-      { id: "curtain", name: "Curtain" },
-      { id: "table-cloth", name: "Table Cloth" },
-      { id: "cushion-cover", name: "Cushion Cover" },
-      { id: "napkin", name: "Napkin" },
+      { id: "curtain", name: "Curtain", price: 50 },
+      { id: "table-cloth", name: "Table Cloth", price: 40 },
+      { id: "cushion-cover", name: "Cushion Cover", price: 20 },
+      { id: "napkin", name: "Napkin", price: 15 },
     ],
   };
 
@@ -119,7 +120,7 @@ const Home = () => {
     setStep("items");
   };
 
-  const addToCart = (item: { id: string; name: string }) => {
+  const addToCart = (item: { id: string; name: string; price: number }) => {
     const existingItem = cart.find((i) => i.id === item.id);
     if (existingItem) {
       setCart(cart.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i)));
@@ -145,6 +146,10 @@ const Home = () => {
 
   const getTotalItems = () => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
   const handleProceedToCheckout = () => {
@@ -233,7 +238,7 @@ const Home = () => {
           room_number: profile?.room_number || null,
           status: "pending",
           payment_status: "pending",
-          total_amount: 0,
+          total_amount: getTotalPrice(),
           notes: `Category: ${selectedCategory}`,
         })
         .select()
@@ -248,10 +253,10 @@ const Home = () => {
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         item_name: item.name,
-        service_name: "Regular Wash",
         quantity: item.quantity,
-        unit_price: 0,
-        total_price: 0,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+        service_name: "Regular Wash",
       }));
 
       const { error: itemsError } = await supabase
@@ -405,6 +410,7 @@ const Home = () => {
                       </div>
                       <div>
                         <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">₹{item.price}</p>
                       </div>
                     </div>
                     {cartItem ? (
@@ -467,6 +473,7 @@ const Home = () => {
                 <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-secondary/50 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">₹{item.price} × {item.quantity} = ₹{item.price * item.quantity}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
@@ -482,6 +489,12 @@ const Home = () => {
                   </div>
                 </div>
               ))}
+              <div className="pt-3 border-t border-border mt-3">
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold text-lg">Total Amount:</p>
+                  <p className="font-bold text-xl text-primary">₹{getTotalPrice()}</p>
+                </div>
+              </div>
             </Card>
 
             <form onSubmit={handleSubmit} className="space-y-4">
