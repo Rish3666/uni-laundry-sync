@@ -39,7 +39,34 @@ const AdminQRScanner = () => {
       scanner.clear();
 
       try {
-        // Find order by delivery_qr_code
+        // Check if this is a pickup token (starts with PKP-)
+        if (decodedText.startsWith("PKP-")) {
+          // Call edge function to redeem pickup token
+          const { data, error } = await supabase.functions.invoke("redeem-pickup-token", {
+            body: { token: decodedText }
+          });
+
+          if (error) {
+            console.error("Edge function error:", error);
+            toast.error(error.message || "Failed to redeem pickup token");
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+
+          if (data?.success) {
+            toast.success(`Order ${data.order.order_number} completed! ✅`);
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+          }
+          return;
+        }
+
+        // Otherwise, treat as delivery QR code (old flow)
         const { data: order, error } = await supabase
           .from("orders")
           .select("*")
@@ -57,7 +84,7 @@ const AdminQRScanner = () => {
         }
 
         if (!order) {
-          toast.error("Invalid delivery QR code");
+          toast.error("Invalid QR code");
           setLoading(false);
           setTimeout(() => {
             scanner.render(onScanSuccess, () => {});
@@ -142,10 +169,10 @@ const AdminQRScanner = () => {
 
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Scan Delivery QR Code
+            Scan QR Code
           </h1>
           <p className="text-muted-foreground">
-            Scan student's QR code to confirm laundry delivery
+            Scan student's pickup QR code or delivery QR code
           </p>
         </div>
 

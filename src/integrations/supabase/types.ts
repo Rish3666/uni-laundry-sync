@@ -210,6 +210,7 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           picked_up_at: string | null
+          pickup_token: string | null
           ready_at: string | null
           received_at: string | null
           room_number: string | null
@@ -236,6 +237,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           picked_up_at?: string | null
+          pickup_token?: string | null
           ready_at?: string | null
           received_at?: string | null
           room_number?: string | null
@@ -262,6 +264,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           picked_up_at?: string | null
+          pickup_token?: string | null
           ready_at?: string | null
           received_at?: string | null
           room_number?: string | null
@@ -389,6 +392,7 @@ export type Database = {
     Functions: {
       generate_customer_number: { Args: never; Returns: string }
       generate_delivery_qr_code: { Args: never; Returns: string }
+      generate_pickup_token: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
