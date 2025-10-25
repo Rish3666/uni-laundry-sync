@@ -25,16 +25,38 @@ const Auth = () => {
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        // Check user role
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role === "admin") {
+          navigate("/admin/batches");
+        } else {
+          navigate("/");
+        }
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && event === "SIGNED_IN") {
+        // Check user role after login
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role === "admin") {
+          navigate("/admin/batches");
+        } else {
+          navigate("/");
+        }
       }
     });
 
@@ -91,19 +113,33 @@ const Auth = () => {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
 
-    toast.success("Logged in successfully!");
+    // Check user role
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    setLoading(false);
+
+    if (roleData?.role === "admin") {
+      toast.success("Welcome Admin!");
+      navigate("/admin/batches");
+    } else {
+      toast.success("Logged in successfully!");
+      navigate("/");
+    }
   };
 
   return (
