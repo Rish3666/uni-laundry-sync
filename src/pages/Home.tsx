@@ -1,5 +1,19 @@
 import { useState, useEffect } from "react";
 import { Sparkles, Shirt, BedDouble, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
+import kurtaIcon from "@/assets/icons/kurta.png";
+import lungiIcon from "@/assets/icons/lungi.png";
+import pyjamaIcon from "@/assets/icons/pyjama.png";
+import blouseIcon from "@/assets/icons/blouse.png";
+import salwarIcon from "@/assets/icons/salwar.png";
+import handTowelIcon from "@/assets/icons/hand-towel.png";
+import quiltDoubleIcon from "@/assets/icons/quilt-double.png";
+import pillowIcon from "@/assets/icons/pillow.png";
+import quiltSingleIcon from "@/assets/icons/quilt-single.png";
+import hankyIcon from "@/assets/icons/hanky.png";
+import blanketSingleIcon from "@/assets/icons/blanket-single.png";
+import bathTowelIcon from "@/assets/icons/bath-towel.png";
+import blanketDoubleIcon from "@/assets/icons/blanket-double.png";
+import kameezIcon from "@/assets/icons/kameez.png";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -274,29 +288,33 @@ const Home = () => {
     }
   };
 
-  const getItemEmoji = (itemId: string) => {
+  const getItemIcon = (itemId: string) => {
+    // Custom icons for specific items
+    if (itemId === "kurta") return kurtaIcon;
+    if (itemId === "lungi-dhoti") return lungiIcon;
+    if (itemId === "pyjama") return pyjamaIcon;
+    if (itemId === "blouse") return blouseIcon;
+    if (itemId === "salwar") return salwarIcon;
+    if (itemId === "towel-hand") return handTowelIcon;
+    if (itemId === "quilt-double") return quiltDoubleIcon;
+    if (itemId === "pillow-cover") return pillowIcon;
+    if (itemId === "quilt-single") return quiltSingleIcon;
+    if (itemId === "hanky") return hankyIcon;
+    if (itemId === "blanket-single") return blanketSingleIcon;
+    if (itemId === "towel-bath") return bathTowelIcon;
+    if (itemId === "blanket-double") return blanketDoubleIcon;
+    if (itemId === "kameez") return kameezIcon;
+    
+    // Fallback to emojis for items without custom icons
     if (itemId.includes("socks")) return "🧦";
-    if (itemId.includes("lungi") || itemId.includes("dhoti")) return "🩳";
     if (itemId.includes("pant") || itemId.includes("trouser")) return "👖";
     if (itemId.includes("shorts")) return "🩳";
     if (itemId.includes("shirt") || itemId.includes("tshirt")) return "👕";
     if (itemId.includes("sweater")) return "🧥";
     if (itemId.includes("saree")) return "🥻";
-    if (itemId.includes("blouse")) return "👚";
     if (itemId.includes("top")) return "👚";
-    if (itemId.includes("salwar") || itemId.includes("kameez")) return "🥻";
     if (itemId.includes("frock") || itemId.includes("skirt")) return "👗";
-    if (itemId.includes("kurta")) return "👔";
-    if (itemId.includes("pyjama")) return "🩱";
-    if (itemId.includes("towel")) return "🧖";
-    if (itemId.includes("quilt") || itemId.includes("blanket")) return "🛏️";
-    if (itemId.includes("pillow")) return "🛏️";
     if (itemId.includes("bed") || itemId.includes("sheet")) return "🛏️";
-    if (itemId.includes("hanky")) return "🧻";
-    if (itemId.includes("curtain")) return "🪟";
-    if (itemId.includes("table-cloth")) return "🍽️";
-    if (itemId.includes("cushion")) return "🛋️";
-    if (itemId.includes("napkin")) return "🧻";
     return "👕";
   };
 
@@ -391,8 +409,12 @@ const Home = () => {
                 return (
                   <Card key={item.id} className="p-4 flex items-center justify-between hover:shadow-card transition-all">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                        <span className="text-2xl">{getItemEmoji(item.id)}</span>
+                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+                        {typeof getItemIcon(item.id) === 'string' && getItemIcon(item.id).startsWith('/') || typeof getItemIcon(item.id) !== 'string' ? (
+                          <img src={getItemIcon(item.id)} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-2xl">{getItemIcon(item.id)}</span>
+                        )}
                       </div>
                       <div>
                         <h3 className="font-medium">{item.name}</h3>
