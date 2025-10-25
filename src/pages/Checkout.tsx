@@ -38,7 +38,7 @@ const Checkout = () => {
       toast.error("Your cart is empty");
       navigate("/");
     }
-  }, [navigate, orderCreated]);
+  }, []); // Only run once on mount
 
   const fetchProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -132,20 +132,22 @@ const Checkout = () => {
         setLoading(false);
         return;
       }
-
-      // Clear cart
-      localStorage.removeItem("cart");
       
       console.log("Order created:", order);
       console.log("QR Code value:", deliveryQrCode);
       console.log("Setting orderCreated state...");
 
-      // Show QR code screen
+      // Show QR code screen first, then clear cart
       setOrderCreated({
         order_number: orderNumber,
         total_amount: totalAmount,
         delivery_qr_code: deliveryQrCode,
       });
+      
+      // Clear cart after setting the state
+      setTimeout(() => {
+        localStorage.removeItem("cart");
+      }, 100);
       
       toast.success("Order created! Show QR to admin");
     } catch (error) {
