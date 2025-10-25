@@ -153,10 +153,14 @@ const AdminBatches = () => {
 
   const markBatchComplete = async (batchNumber: number) => {
     try {
-      // Update all orders in the batch
+      // Update all orders in the batch to ready status
       const { error } = await supabase
         .from("orders")
-        .update({ batch_status: "completed" })
+        .update({ 
+          batch_status: "completed",
+          status: "ready",
+          ready_at: new Date().toISOString()
+        })
         .eq("batch_number", batchNumber);
 
       if (error) throw error;
@@ -174,27 +178,6 @@ const AdminBatches = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
-    try {
-      const updates: any = { status };
-      if (status === "processing") {
-        updates.received_at = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from("orders")
-        .update(updates)
-        .eq("id", orderId);
-
-      if (error) throw error;
-
-      toast.success("Order status updated");
-      fetchBatches();
-    } catch (error) {
-      console.error("Error updating order:", error);
-      toast.error("Failed to update order");
-    }
-  };
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -385,34 +368,11 @@ const AdminBatches = () => {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-semibold">{order.order_number}</span>
                               <Badge variant="outline">{order.status}</Badge>
-                              {order.received_at && (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                              )}
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {order.customer_name} • {order.customer_phone} • Room {order.room_number}
                             </div>
                             <div className="text-sm font-medium mt-1">₹{order.total_amount}</div>
-                          </div>
-                          <div className="flex gap-2">
-                            {order.status === "pending" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateOrderStatus(order.id, "processing")}
-                              >
-                                Mark Received
-                              </Button>
-                            )}
-                            {order.status === "processing" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateOrderStatus(order.id, "ready")}
-                              >
-                                Mark Ready
-                              </Button>
-                            )}
                           </div>
                         </div>
                       ))}
