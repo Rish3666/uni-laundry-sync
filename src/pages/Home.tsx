@@ -170,25 +170,17 @@ const Home = () => {
       return;
     }
 
-    if (!formData.studentId || !formData.studentName || !formData.mobileNo) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    if (!/^[0-9]{10}$/.test(formData.mobileNo)) {
-      toast.error("Please enter a valid 10-digit mobile number");
+    // Validate form data using zod schema
+    const validation = orderFormSchema.safeParse(formData);
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
     if (cart.length === 0) {
       toast.error("Please add items to cart");
-      return;
-    }
-
-    // Check total items limit (6 per day)
-    const totalItems = getTotalItems();
-    if (totalItems > 6) {
-      toast.error("Maximum 6 items allowed per day");
       return;
     }
 
