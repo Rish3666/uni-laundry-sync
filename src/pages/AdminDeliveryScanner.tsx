@@ -100,14 +100,15 @@ const AdminDeliveryScanner = () => {
       const { error } = await supabase
         .from("orders")
         .update({
-          status: "processing",
+          status: "ready",
+          ready_at: new Date().toISOString(),
           scanned_by: user?.id,
         })
         .eq("id", scannedOrder.id);
 
       if (error) throw error;
 
-      toast.success("Laundry received! Marked as processing ✅");
+      toast.success("Laundry received! Marked as ready ✅");
       setScannedOrder(null);
       setLoading(false);
       

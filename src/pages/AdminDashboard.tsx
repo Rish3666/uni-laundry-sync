@@ -8,7 +8,6 @@ import {
   Package, 
   Clock, 
   CheckCircle, 
-  TrendingUp,
   DollarSign,
   ShieldX,
   ChevronDown,
@@ -50,7 +49,6 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
-    processing: 0,
     ready: 0,
     revenue: 0,
   });
@@ -170,7 +168,6 @@ const AdminDashboard = () => {
     const stats = {
       total: orders.length,
       pending: orders.filter(o => o.status === "pending").length,
-      processing: orders.filter(o => o.status === "processing").length,
       ready: orders.filter(o => o.status === "ready").length,
       revenue: orders.reduce((sum, o) => sum + Number(o.total_amount), 0),
     };
@@ -265,7 +262,7 @@ const AdminDashboard = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card rounded-lg p-4 shadow-card">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Package className="w-4 h-4" />
@@ -280,14 +277,6 @@ const AdminDashboard = () => {
               <span className="text-sm">Pending</span>
             </div>
             <p className="text-2xl font-bold">{stats.pending}</p>
-          </div>
-
-          <div className="bg-card rounded-lg p-4 shadow-card">
-            <div className="flex items-center gap-2 text-info mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">Processing</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.processing}</p>
           </div>
 
           <div className="bg-card rounded-lg p-4 shadow-card">
@@ -405,15 +394,6 @@ const AdminDashboard = () => {
                               {order.status === "pending" && (
                                 <Button
                                   size="sm"
-                                  onClick={() => updateOrderStatus(order.id, "processing")}
-                                >
-                                  Start Processing
-                                </Button>
-                              )}
-                              {order.status === "processing" && (
-                                <Button
-                                  size="sm"
-                                  variant="default"
                                   onClick={() => updateOrderStatus(order.id, "ready")}
                                 >
                                   Mark Ready
