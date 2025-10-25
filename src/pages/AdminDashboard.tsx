@@ -27,12 +27,23 @@ interface Order {
   payment_status: string;
   payment_method: string;
   created_at: string;
+  batch_number: number;
+  batch_status: string;
+  room_number: string;
+}
+
+interface BatchGroup {
+  batch_number: number;
+  orders: Order[];
+  batch_status: string;
+  total_amount: number;
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [batchGroups, setBatchGroups] = useState<BatchGroup[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -52,18 +63,55 @@ const AdminDashboard = () => {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
+        .order("batch_number", { ascending: false })
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       setOrders(data || []);
       calculateStats(data || []);
+      groupOrdersByBatch(data || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
     }
+  };
+
+  const groupOrdersByBatch = (orders: Order[]) => {
+    const batchMap = new Map<number, Order[]>();
+    
+    orders.forEach(order => {
+      const batchNum = order.batch_number || 0;
+      if (!batchMap.has(batchNum)) {
+        batchMap.set(batchNum, []);
+      }
+      batchMap.get(batchNum)?.push(order);
+    });
+
+    const groups: BatchGroup[] = Array.from(batchMap.entries()).map(([batchNum, orders]) => {
+      // Determine batch status from most common order batch_status
+      const statusCounts = orders.reduce((acc, o) => {
+        acc[o.batch_status || "pending"] = (acc[o.batch_status || "pending"] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const batchStatus = Object.entries(statusCounts).reduce((a, b) =>
+        a[1] > b[1] ? a : b
+      )[0];
+
+      return {
+        batch_number: batchNum,
+        orders,
+        batch_status: batchStatus,
+        total_amount: orders.reduce((sum, o) => sum + Number(o.total_amount), 0),
+      };
+    });
+
+    // Sort by batch number descending
+    groups.sort((a, b) => b.batch_number - a.batch_number);
+    setBatchGroups(groups);
   };
 
   const calculateStats = (orders: Order[]) => {
@@ -98,9 +146,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredOrders = selectedTab === "all" 
-    ? orders 
-    : orders.filter(o => o.status === selectedTab);
+  const filteredBatches = selectedTab === "all" 
+    ? batchGroups 
+    : batchGroups.map(batch => ({
+        ...batch,
+        orders: batch.orders.filter(o => o.status === selectedTab)
+      })).filter(batch => batch.orders.length > 0);
 
   const statusColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
@@ -221,86 +272,107 @@ const AdminDashboard = () => {
 
             <TabsContent value={selectedTab} className="m-0">
               <div className="divide-y divide-border">
-                {filteredOrders.map((order) => (
-                  <div key={order.id} className="p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-semibold text-primary">
-                            {order.order_number}
-                          </span>
-                          <Badge className={statusColors[order.status]}>
-                            {order.status}
-                          </Badge>
-                          <Badge variant="outline">
-                            {order.payment_method}
-                          </Badge>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Customer:</span>
-                            <p className="font-medium">{order.customer_name}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Phone:</span>
-                            <p className="font-medium">{order.customer_phone}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Amount:</span>
-                            <p className="font-medium">₹{order.total_amount}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Date:</span>
-                            <p className="font-medium">
-                              {new Date(order.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
+                {filteredBatches.map((batch) => (
+                  <div key={batch.batch_number} className="p-4">
+                    {/* Batch Header */}
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-lg">
+                          Batch {batch.batch_number}
+                        </h3>
+                        <Badge className={statusColors[batch.batch_status]}>
+                          {batch.batch_status}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {batch.orders.length} orders • ₹{batch.total_amount}
+                        </span>
                       </div>
+                    </div>
 
-                      <div className="flex flex-col gap-2">
-                        {order.status === "pending" && (
-                          <Button
-                            size="sm"
-                            onClick={() => updateOrderStatus(order.id, "processing")}
-                          >
-                            Start Processing
-                          </Button>
-                        )}
-                        {order.status === "processing" && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateOrderStatus(order.id, "ready")}
-                          >
-                            Mark Ready
-                          </Button>
-                        )}
-                        {order.status === "ready" && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateOrderStatus(order.id, "delivered")}
-                          >
-                            Mark Delivered
-                          </Button>
-                        )}
-                        {order.status !== "cancelled" && order.status !== "delivered" && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => updateOrderStatus(order.id, "cancelled")}
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
+                    {/* Orders in Batch */}
+                    <div className="space-y-3 ml-8">
+                      {batch.orders.map((order) => (
+                        <div key={order.id} className="p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono font-semibold text-primary">
+                                  {order.order_number}
+                                </span>
+                                <Badge className={statusColors[order.status]}>
+                                  {order.status}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {order.payment_method}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Customer:</span>
+                                  <p className="font-medium">{order.customer_name}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Phone:</span>
+                                  <p className="font-medium">{order.customer_phone}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Room:</span>
+                                  <p className="font-medium">{order.room_number}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Amount:</span>
+                                  <p className="font-medium">₹{order.total_amount}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                              {order.status === "pending" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateOrderStatus(order.id, "processing")}
+                                >
+                                  Start Processing
+                                </Button>
+                              )}
+                              {order.status === "processing" && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => updateOrderStatus(order.id, "ready")}
+                                >
+                                  Mark Ready
+                                </Button>
+                              )}
+                              {order.status === "ready" && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => updateOrderStatus(order.id, "delivered")}
+                                >
+                                  Mark Delivered
+                                </Button>
+                              )}
+                              {order.status !== "cancelled" && order.status !== "delivered" && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => updateOrderStatus(order.id, "cancelled")}
+                                >
+                                  Cancel
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
 
-                {filteredOrders.length === 0 && (
+                {filteredBatches.length === 0 && (
                   <div className="p-12 text-center text-muted-foreground">
                     <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No orders found</p>
