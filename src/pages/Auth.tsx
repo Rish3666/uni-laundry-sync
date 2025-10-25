@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, User, Phone, IdCard } from "lucide-react";
+import { signupSchema } from "@/lib/validation";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -43,13 +44,12 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password) {
-      toast.error("Email and password are required");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    // Validate form data
+    const validation = signupSchema.safeParse(formData);
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 

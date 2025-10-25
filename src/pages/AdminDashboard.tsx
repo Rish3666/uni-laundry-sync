@@ -12,7 +12,10 @@ import {
   TrendingUp,
   Users,
   DollarSign,
+  ShieldX,
 } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
 
 interface Order {
   id: string;
@@ -27,6 +30,8 @@ interface Order {
 }
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -105,10 +110,29 @@ const AdminDashboard = () => {
     cancelled: "bg-destructive/10 text-destructive",
   };
 
-  if (loading) {
+  if (roleLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 max-w-md p-8">
+          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+            <ShieldX className="w-8 h-8 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You don't have permission to access the admin dashboard.
+          </p>
+          <Button onClick={() => navigate("/")}>
+            Go to Home
+          </Button>
+        </div>
       </div>
     );
   }
