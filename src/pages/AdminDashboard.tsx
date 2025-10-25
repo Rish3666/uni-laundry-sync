@@ -70,37 +70,37 @@ const AdminDashboard = () => {
     setExpandedBatches(newExpanded);
   };
 
-  const markAllDelivered = async (batchNumber: number) => {
+  const markBatchReady = async (batchNumber: number) => {
     try {
       const batch = batchGroups.find(b => b.batch_number === batchNumber);
       if (!batch) return;
 
-      // Get all order IDs in this batch that are not already delivered or cancelled
+      // Get all order IDs in this batch that are pending
       const orderIds = batch.orders
-        .filter(o => o.status !== "delivered" && o.status !== "cancelled")
+        .filter(o => o.status === "pending")
         .map(o => o.id);
 
       if (orderIds.length === 0) {
-        toast.info("All orders in this batch are already delivered or cancelled");
+        toast.info("No pending orders in this batch");
         return;
       }
 
-      // Update all orders to delivered status
+      // Update all orders to ready status
       const { error } = await supabase
         .from("orders")
         .update({ 
-          status: "delivered",
-          delivered_at: new Date().toISOString()
+          status: "ready",
+          ready_at: new Date().toISOString()
         })
         .in("id", orderIds);
 
       if (error) throw error;
 
-      toast.success(`Marked ${orderIds.length} orders as delivered in Batch ${batchNumber}`);
+      toast.success(`Marked ${orderIds.length} orders as ready in Batch ${batchNumber}`);
       fetchOrders();
     } catch (error) {
-      console.error("Error marking batch as delivered:", error);
-      toast.error("Failed to mark batch as delivered");
+      console.error("Error marking batch as ready:", error);
+      toast.error("Failed to mark batch as ready");
     }
   };
 
@@ -337,12 +337,12 @@ const AdminDashboard = () => {
                         variant="default"
                         onClick={(e) => {
                           e.stopPropagation();
-                          markAllDelivered(batch.batch_number);
+                          markBatchReady(batch.batch_number);
                         }}
                         className="ml-2"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark All Delivered
+                        Mark Batch Ready
                       </Button>
                     </div>
                   </div>
@@ -399,16 +399,7 @@ const AdminDashboard = () => {
                                   Mark Ready
                                 </Button>
                               )}
-                              {order.status === "ready" && (
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  onClick={() => updateOrderStatus(order.id, "delivered")}
-                                >
-                                  Mark Delivered
-                                </Button>
-                              )}
-                              {order.status !== "cancelled" && order.status !== "delivered" && (
+                              {order.status !== "cancelled" && order.status !== "delivered" && order.status !== "completed" && (
                                 <Button
                                   size="sm"
                                   variant="destructive"
