@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Search, QrCode, Package, X, LogOut } from "lucide-react";
+import { Loader2, Search, QrCode, Package, X, LogOut, ArrowLeft } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -302,13 +302,19 @@ const AdminBatches = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto p-4 max-w-6xl">
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Batch Management
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Total Orders: {totalOrders} | Dates: {dates.length}
-            </p>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => navigate("/admin/dashboard")} variant="outline" size="lg">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Batch Management
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Total Orders: {totalOrders} | Dates: {dates.length}
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => navigate("/admin/scan")} size="lg">
