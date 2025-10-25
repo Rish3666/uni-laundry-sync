@@ -149,6 +149,14 @@ const Profile = () => {
           )}
         </div>
 
+        <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
+          <h2 className="text-lg font-semibold">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Theme</span>
+            <ThemeToggle />
+          </div>
+        </div>
+
         {isAdmin && <Button onClick={() => navigate("/admin")} className="w-full">Admin Dashboard</Button>}
         <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
       </div>
