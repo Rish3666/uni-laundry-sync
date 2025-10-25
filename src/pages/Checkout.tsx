@@ -103,9 +103,12 @@ const Checkout = () => {
       
       console.log("Pending order created:", pendingOrder);
       console.log("QR Code value:", deliveryQrCode);
+      console.log("Setting orderCreated state...");
 
-      toast.success("QR Generated! Scan it to confirm your order");
+      // Ensure state update happens
       setOrderCreated(pendingOrder);
+      
+      toast.success("QR Generated! Scroll down to see it");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to generate order");
@@ -125,22 +128,36 @@ const Checkout = () => {
   }
 
   if (orderCreated) {
+    console.log("Rendering QR code screen with data:", orderCreated);
+    
     return (
       <div className="min-h-screen bg-background pb-24">
         <div className="sticky top-0 z-10 bg-gradient-primary shadow-elevated">
           <div className="max-w-2xl mx-auto px-4 py-4">
-            <h1 className="text-xl font-semibold text-primary-foreground text-center">Order Created</h1>
+            <h1 className="text-xl font-semibold text-primary-foreground text-center">✅ Order Created</h1>
           </div>
         </div>
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-center">Show This QR to Admin</CardTitle>
+          <Card className="shadow-card border-2 border-primary/20">
+            <CardHeader className="bg-primary/5">
+              <CardTitle className="text-center text-lg">📱 Scan This QR Code</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex justify-center bg-white p-6 rounded-lg">
-                <QRCodeSVG value={orderCreated.delivery_qr_code} size={200} />
+            <CardContent className="space-y-6 pt-6">
+              <div className="flex justify-center bg-white p-8 rounded-lg border-2 border-dashed border-primary/30">
+                {orderCreated?.delivery_qr_code ? (
+                  <QRCodeSVG 
+                    value={orderCreated.delivery_qr_code} 
+                    size={220}
+                    level="H"
+                    includeMargin={true}
+                  />
+                ) : (
+                  <div className="text-center text-destructive">
+                    <p>Error: QR code value missing</p>
+                    <p className="text-xs mt-2">{JSON.stringify(orderCreated)}</p>
+                  </div>
+                )}
               </div>
               <div className="text-center space-y-2">
                 <p className="font-semibold text-lg">Order #{orderCreated.order_number}</p>
