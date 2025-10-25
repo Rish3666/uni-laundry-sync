@@ -1,4 +1,4 @@
-import { Home, ShoppingCart, ShoppingBag, User } from "lucide-react";
+import { Home, ShoppingBag, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const BottomNav = () => {
@@ -11,7 +11,6 @@ const BottomNav = () => {
 
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
-    { path: "/cart", icon: ShoppingCart, label: "Cart" },
     { path: "/orders", icon: ShoppingBag, label: "Orders" },
     { path: "/profile", icon: User, label: "Profile" },
   ];

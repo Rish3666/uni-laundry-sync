@@ -33,7 +33,7 @@ const Checkout = () => {
       setCart(JSON.parse(savedCart));
     } else {
       toast.error("Your cart is empty");
-      navigate("/cart");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -152,7 +152,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="sticky top-0 z-10 bg-gradient-primary shadow-elevated">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/cart")} className="rounded-full text-primary-foreground hover:bg-white/20">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="rounded-full text-primary-foreground hover:bg-white/20">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>

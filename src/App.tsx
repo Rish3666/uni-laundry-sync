@@ -9,7 +9,6 @@ import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import QRScanner from "./pages/QRScanner";
-import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -30,7 +29,6 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/qr-scanner" element={<QRScanner />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
