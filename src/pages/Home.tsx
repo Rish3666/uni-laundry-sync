@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Shirt, BedDouble, Package, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
+import { Sparkles, Shirt, BedDouble, ShoppingCart, Loader2, Trash2, QrCode } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +66,6 @@ const Home = () => {
   };
 
   const categories = [
-    { id: "others", name: "Others", icon: Package, color: "from-amber-500 to-amber-600" },
     { id: "mens-wear", name: "Men's Wear", icon: Shirt, color: "from-blue-500 to-blue-600" },
     { id: "womens-wear", name: "Women's Wear", icon: Sparkles, color: "from-pink-500 to-pink-600" },
     { id: "bedding", name: "Bedding", icon: BedDouble, color: "from-purple-500 to-purple-600" },
@@ -107,12 +106,6 @@ const Home = () => {
       { id: "blanket-single", name: "Blanket - Single", price: 150 },
       { id: "towel-bath", name: "Towel - Bath", price: 30 },
       { id: "blanket-double", name: "Blanket - Double", price: 300 },
-    ],
-    "others": [
-      { id: "curtain", name: "Curtain", price: 50 },
-      { id: "table-cloth", name: "Table Cloth", price: 40 },
-      { id: "cushion-cover", name: "Cushion Cover", price: 20 },
-      { id: "napkin", name: "Napkin", price: 15 },
     ],
   };
 
