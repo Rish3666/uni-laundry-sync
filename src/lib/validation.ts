@@ -18,5 +18,15 @@ export const orderFormSchema = z.object({
   mobileNo: z.string().trim().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
 });
 
+// Profile update validation schema
+export const profileUpdateSchema = z.object({
+  student_name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
+  mobile_no: z.string().trim().regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
+  student_id: z.string().trim().max(50, "Student ID must be less than 50 characters"),
+  room_number: z.string().trim().max(20, "Room number must be less than 20 characters"),
+  gender: z.enum(["male", "female", ""], { errorMap: () => ({ message: "Invalid gender selection" }) }),
+});
+
 export type SignupFormData = z.infer<typeof signupSchema>;
 export type OrderFormData = z.infer<typeof orderFormSchema>;
+export type ProfileUpdateData = z.infer<typeof profileUpdateSchema>;

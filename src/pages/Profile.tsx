@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { profileUpdateSchema } from "@/lib/validation";
+import { z } from "zod";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -36,14 +38,21 @@ const Profile = () => {
 
   const handleUpdateProfile = async () => {
     try {
+      // Validate input data
+      const validatedData = profileUpdateSchema.parse(formData);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { error } = await supabase.from("profiles").update(formData).eq("user_id", user.id);
+      const { error } = await supabase.from("profiles").update(validatedData).eq("user_id", user.id);
       if (error) throw error;
       toast.success("Profile updated");
       setEditing(false);
       fetchProfile();
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
       toast.error("Update failed");
     }
   };
