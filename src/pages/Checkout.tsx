@@ -34,11 +34,11 @@ const Checkout = () => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       setCart(JSON.parse(savedCart));
-    } else {
+    } else if (!orderCreated) {
       toast.error("Your cart is empty");
       navigate("/");
     }
-  }, [navigate]);
+  }, [navigate, orderCreated]);
 
   const fetchProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
