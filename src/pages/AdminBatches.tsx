@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Search, QrCode, Package, X } from "lucide-react";
+import { Loader2, Search, QrCode, Package, X, LogOut } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +64,12 @@ const AdminBatches = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
   const [batchToComplete, setBatchToComplete] = useState<number | null>(null);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/admin-login");
+  };
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -304,10 +310,16 @@ const AdminBatches = () => {
               Total Orders: {totalOrders} | Dates: {dates.length}
             </p>
           </div>
-          <Button onClick={() => navigate("/admin/scan")} size="lg">
-            <QrCode className="mr-2 h-4 w-4" />
-            Scan QR
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/admin/scan")} size="lg">
+              <QrCode className="mr-2 h-4 w-4" />
+              Scan QR
+            </Button>
+            <Button onClick={handleLogout} variant="outline" size="lg">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Date Selector */}
