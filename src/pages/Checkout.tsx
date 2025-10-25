@@ -160,20 +160,23 @@ const Checkout = () => {
               <div className="text-center space-y-2">
                 <p className="font-semibold text-lg">Order #{orderCreated.order_number}</p>
                 <p className="text-muted-foreground">Total: ₹{orderCreated.total_amount}</p>
-                <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
-                  <p className="text-sm text-warning font-medium">
-                    ⚠️ Take your laundry to admin and show this QR code
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-primary font-medium">
+                    📱 Scan this QR code to confirm your order
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Your order will be confirmed once admin scans this code
+                    Click the button below to open your camera and scan
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
-                <Button onClick={() => navigate("/orders")} className="w-full" size="lg">
+                <Button onClick={() => navigate("/order-confirm-scanner")} className="w-full" size="lg">
+                  Scan QR to Confirm
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/orders")} className="w-full">
                   View My Orders
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                <Button variant="ghost" onClick={() => navigate("/")} className="w-full">
                   Back to Home
                 </Button>
               </div>

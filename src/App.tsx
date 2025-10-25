@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminQRScanner from "./pages/AdminQRScanner";
 import AdminDeliveryScanner from "./pages/AdminDeliveryScanner";
 import AdminPickupScanner from "./pages/AdminPickupScanner";
+import OrderConfirmScanner from "./pages/OrderConfirmScanner";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -42,6 +43,7 @@ const App: React.FC = () => {
                 <Route path="/admin/scan" element={<ProtectedRoute><AdminQRScanner /></ProtectedRoute>} />
                 <Route path="/admin/scan-delivery" element={<ProtectedRoute><AdminDeliveryScanner /></ProtectedRoute>} />
                 <Route path="/admin/scan-pickup" element={<ProtectedRoute><AdminPickupScanner /></ProtectedRoute>} />
+                <Route path="/order-confirm-scanner" element={<ProtectedRoute><OrderConfirmScanner /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
