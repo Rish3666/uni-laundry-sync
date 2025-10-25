@@ -33,6 +33,7 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [batchInfo, setBatchInfo] = useState<{ batch_number: number; batch_status: string } | null>(null);
   const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
@@ -58,6 +59,14 @@ const Orders = () => {
 
       if (error) throw error;
       setOrders(data || []);
+
+      // Get batch info if there are orders
+      if (data && data.length > 0 && data[0].batch_number) {
+        setBatchInfo({
+          batch_number: data[0].batch_number,
+          batch_status: data[0].batch_status || "pending",
+        });
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
@@ -107,6 +116,35 @@ const Orders = () => {
   return (
     <div className="min-h-[calc(100vh-8rem)] p-4 pb-24 animate-fade-in">
       <div className="max-w-2xl mx-auto space-y-4">
+        {/* Batch Info Banner */}
+        {batchInfo && (
+          <Card className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Your Batch</p>
+                <p className="text-2xl font-bold">Batch {batchInfo.batch_number}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Status</p>
+                <Badge variant={
+                  batchInfo.batch_status === "completed" ? "default" : 
+                  batchInfo.batch_status === "processing" ? "secondary" : "outline"
+                } className="text-sm capitalize">
+                  {batchInfo.batch_status}
+                </Badge>
+              </div>
+            </div>
+            {batchInfo.batch_status === "completed" && (
+              <div className="mt-3 p-3 bg-success/10 border border-success/20 rounded-md">
+                <p className="text-sm text-success font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  🎉 Your laundry is ready for pickup!
+                </p>
+              </div>
+            )}
+          </Card>
+        )}
+        
         {/* Header */}
         <div className="space-y-4">
           <h1 className="text-2xl font-bold">My Orders</h1>

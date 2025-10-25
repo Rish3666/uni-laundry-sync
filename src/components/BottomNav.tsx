@@ -5,7 +5,9 @@ const BottomNav = () => {
   const location = useLocation();
 
   // Hide nav on auth, qr-scanner, and admin pages
-  if (location.pathname === "/auth" || location.pathname === "/qr-scanner" || location.pathname === "/admin") {
+  if (location.pathname === "/auth" || 
+      location.pathname === "/qr-scanner" || 
+      location.pathname.startsWith("/admin")) {
     return null;
   }
 

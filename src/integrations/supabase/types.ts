@@ -196,6 +196,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          batch_number: number | null
+          batch_status: string | null
           created_at: string | null
           customer_email: string | null
           customer_name: string
@@ -209,7 +211,9 @@ export type Database = {
           payment_status: string | null
           picked_up_at: string | null
           ready_at: string | null
+          received_at: string | null
           room_number: string | null
+          scanned_by: string | null
           sms_sent: boolean | null
           status: string
           student_id: string | null
@@ -218,6 +222,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          batch_number?: number | null
+          batch_status?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_name: string
@@ -231,7 +237,9 @@ export type Database = {
           payment_status?: string | null
           picked_up_at?: string | null
           ready_at?: string | null
+          received_at?: string | null
           room_number?: string | null
+          scanned_by?: string | null
           sms_sent?: boolean | null
           status?: string
           student_id?: string | null
@@ -240,6 +248,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          batch_number?: number | null
+          batch_status?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_name?: string
@@ -253,7 +263,9 @@ export type Database = {
           payment_status?: string | null
           picked_up_at?: string | null
           ready_at?: string | null
+          received_at?: string | null
           room_number?: string | null
+          scanned_by?: string | null
           sms_sent?: boolean | null
           status?: string
           student_id?: string | null

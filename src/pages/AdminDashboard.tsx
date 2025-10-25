@@ -142,8 +142,16 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="bg-gradient-primary shadow-elevated">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-primary-foreground">Admin Dashboard</h1>
-          <p className="text-primary-foreground/80 text-sm">Manage orders & track performance</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Admin Dashboard</h1>
+              <p className="text-primary-foreground/80 text-sm">Manage orders & track performance</p>
+            </div>
+            <Button onClick={() => navigate("/admin/batches")} variant="secondary" size="lg">
+              <Package className="mr-2 h-4 w-4" />
+              View Batches
+            </Button>
+          </div>
         </div>
       </div>
 
