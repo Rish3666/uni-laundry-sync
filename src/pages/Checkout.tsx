@@ -81,75 +81,38 @@ const Checkout = () => {
 
       const totalAmount = getTotalAmount();
       const orderNumber = `LND${Date.now().toString().slice(-8)}`;
-      const deliveryQrCode = `DLV-${Date.now().toString()}-${user.id.slice(0, 8)}`;
+      const deliveryQrCode = `ORD-${Date.now().toString()}-${user.id.slice(0, 8)}`;
 
-      // Create order in database immediately
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          order_number: orderNumber,
-          customer_name: profile.student_name,
-          customer_phone: profile.mobile_no,
-          customer_email: profile.email,
-          student_id: profile.student_id,
-          room_number: profile.room_number,
-          total_amount: totalAmount,
-          status: "pending",
-          payment_method: paymentMethod,
-          payment_status: paymentMethod === "cash" ? "pending" : "paid",
-          delivery_qr_code: deliveryQrCode,
-        })
-        .select()
-        .single();
+      // Store pending order data (not in database yet)
+      const pendingOrder = {
+        user_id: user.id,
+        order_number: orderNumber,
+        customer_name: profile.student_name,
+        customer_phone: profile.mobile_no,
+        customer_email: profile.email,
+        student_id: profile.student_id,
+        room_number: profile.room_number,
+        total_amount: totalAmount,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === "cash" ? "pending" : "paid",
+        delivery_qr_code: deliveryQrCode,
+        cart: cart,
+      };
 
-      if (orderError) {
-        toast.error("Failed to create order");
-        console.error(orderError);
-        setLoading(false);
-        return;
-      }
-
-      // Insert order items
-      const orderItems = cart.map((item) => ({
-        order_id: order.id,
-        item_id: item.itemId,
-        service_type_id: item.id.split("-")[1],
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity,
-        service_name: item.serviceType,
-        item_name: item.name,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Error inserting order items:", itemsError);
-        toast.error("Failed to add order items");
-        setLoading(false);
-        return;
-      }
+      // Save to localStorage for admin to process
+      localStorage.setItem("pendingOrder", JSON.stringify(pendingOrder));
       
-      console.log("Order created:", order);
+      console.log("Pending order created:", pendingOrder);
       console.log("QR Code value:", deliveryQrCode);
-      console.log("Setting orderCreated state...");
 
-      // Show QR code screen first, then clear cart
+      // Show QR code screen
       setOrderCreated({
         order_number: orderNumber,
         total_amount: totalAmount,
         delivery_qr_code: deliveryQrCode,
       });
       
-      // Clear cart after setting the state
-      setTimeout(() => {
-        localStorage.removeItem("cart");
-      }, 100);
-      
-      toast.success("Order created! Show QR to admin");
+      toast.success("QR Generated! Show it to admin for pickup");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to create order");

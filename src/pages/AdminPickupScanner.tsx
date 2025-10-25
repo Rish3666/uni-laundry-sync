@@ -40,9 +40,94 @@ const AdminPickupScanner = () => {
       scanner.clear().catch(console.error);
 
       try {
+        // Check if this is a new order QR code (starts with ORD-)
+        if (decodedText.startsWith("ORD-")) {
+          // Get pending order data from customer's device (they need to share it)
+          // For now, we'll parse the QR code to get customer info
+          // In a real app, customer would need to be present or data would be in QR
+          
+          // Extract user_id from QR code
+          const parts = decodedText.split("-");
+          const userId = parts[2];
+          
+          // Fetch user's profile to get order details
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", userId)
+            .single();
+
+          if (profileError || !profile) {
+            toast.error("Customer not found. Please ask customer to complete their profile.");
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+
+          // Show confirmation dialog
+          const confirmed = window.confirm(
+            `Accept laundry from ${profile.student_name}?\n` +
+            `Student ID: ${profile.student_id}\n` +
+            `Room: ${profile.room_number}\n\n` +
+            `Note: Order details will be recorded.`
+          );
+
+          if (!confirmed) {
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+
+          // Create a placeholder order (items will be added later by customer)
+          const orderNumber = `LND${Date.now().toString().slice(-8)}`;
+          const { data: { user: adminUser } } = await supabase.auth.getUser();
+          
+          const { data: order, error: orderError } = await supabase
+            .from("orders")
+            .insert({
+              user_id: userId,
+              order_number: orderNumber,
+              customer_name: profile.student_name,
+              customer_phone: profile.mobile_no,
+              customer_email: profile.email,
+              student_id: profile.student_id,
+              room_number: profile.room_number,
+              total_amount: 0, // Will be updated when items are added
+              status: "received",
+              payment_method: "cash",
+              payment_status: "pending",
+              delivery_qr_code: decodedText,
+              received_at: new Date().toISOString(),
+              scanned_by: adminUser?.id,
+            })
+            .select()
+            .single();
+
+          if (orderError) {
+            console.error("Failed to create order:", orderError);
+            toast.error("Failed to create order");
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+
+          toast.success(`✅ Laundry received from ${profile.student_name}!\nOrder: ${orderNumber}`);
+          setLoading(false);
+          setTimeout(() => {
+            scanner.render(onScanSuccess, () => {});
+          }, 2000);
+          return;
+        }
+        
         // Check if this is a pickup token (starts with PKP-)
         if (!decodedText.startsWith("PKP-")) {
-          toast.error("Invalid pickup token. Please scan a pickup QR code.");
+          toast.error("Invalid QR code. Please scan a valid order or pickup QR code.");
           setLoading(false);
           setTimeout(() => {
             scanner.render(onScanSuccess, () => {});
@@ -112,10 +197,10 @@ const AdminPickupScanner = () => {
 
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Scan Pickup QR Code
+            Scan QR Code
           </h1>
           <p className="text-muted-foreground">
-            Scan student's pickup QR code to complete order
+            Scan customer's order QR (ORD-) to receive laundry or pickup QR (PKP-) to complete delivery
           </p>
         </div>
 
