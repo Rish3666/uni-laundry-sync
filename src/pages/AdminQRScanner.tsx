@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ const AdminQRScanner = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(false);
   const [scannedOrder, setScannedOrder] = useState<any>(null);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -34,9 +35,11 @@ const AdminQRScanner = () => {
       false
     );
 
+    scannerRef.current = scanner;
+
     const onScanSuccess = async (decodedText: string) => {
       setLoading(true);
-      scanner.clear();
+      scanner.clear().catch(console.error);
 
       try {
         // Check if this is a pickup token (starts with PKP-)
@@ -114,7 +117,10 @@ const AdminQRScanner = () => {
     scanner.render(onScanSuccess, () => {});
 
     return () => {
-      scanner.clear().catch(console.error);
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(console.error);
+        scannerRef.current = null;
+      }
     };
   }, [isAdmin]);
 
