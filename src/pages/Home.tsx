@@ -403,12 +403,38 @@ const Home = () => {
                       </div>
                       <div>
                         <h3 className="font-medium">{item.name}</h3>
-                        {cartItem && <p className="text-sm text-muted-foreground">Qty: {cartItem.quantity}</p>}
                       </div>
                     </div>
-                    <Button onClick={() => addToCart(item)} className="bg-primary hover:bg-primary/90 h-9 px-4">
-                      Add
-                    </Button>
+                    {cartItem ? (
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-9 w-9" 
+                          onClick={() => updateQuantity(item.id, cartItem.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <span className="w-8 text-center font-medium">{cartItem.quantity}</span>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-9 w-9" 
+                          onClick={() => updateQuantity(item.id, cartItem.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-9 w-9" 
+                        onClick={() => addToCart(item)}
+                      >
+                        +
+                      </Button>
+                    )}
                   </Card>
                 );
               })}
