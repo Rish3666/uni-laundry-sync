@@ -59,7 +59,7 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
-    navigate("/admin-login");
+    navigate("/admin/login");
   };
 
   const toggleBatch = (batchNumber: number) => {
