@@ -22,6 +22,10 @@ interface Order {
   batch_status: string;
   received_at: string | null;
   created_at: string;
+  user_id: string;
+  profiles?: {
+    gender: string;
+  };
 }
 
 interface Batch {
@@ -29,15 +33,26 @@ interface Batch {
   orders: Order[];
   batch_status: string;
   total_orders: number;
+  date: string;
+  gender: string;
+}
+
+interface GroupedBatches {
+  [date: string]: {
+    male: Batch[];
+    female: Batch[];
+  };
 }
 
 const AdminBatches = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
-  const [batches, setBatches] = useState<Batch[]>([]);
+  const [groupedBatches, setGroupedBatches] = useState<GroupedBatches>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [totalOrders, setTotalOrders] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -53,7 +68,12 @@ const AdminBatches = () => {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          profiles!inner (
+            gender
+          )
+        `)
         .order("batch_number", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -61,39 +81,68 @@ const AdminBatches = () => {
 
       setTotalOrders(data?.length || 0);
 
-      // Group orders by batch
-      const batchMap = new Map<number, Order[]>();
-      data?.forEach((order) => {
+      // Group orders by date and gender, then by batch
+      const grouped: GroupedBatches = {};
+      
+      data?.forEach((order: any) => {
+        const orderDate = new Date(order.created_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        const gender = order.profiles?.gender?.toLowerCase() || "unknown";
         const batchNum = order.batch_number || 0;
-        if (!batchMap.has(batchNum)) {
-          batchMap.set(batchNum, []);
+
+        // Initialize date group if not exists
+        if (!grouped[orderDate]) {
+          grouped[orderDate] = { male: [], female: [] };
         }
-        batchMap.get(batchNum)?.push(order as Order);
+
+        // Find or create batch for this gender
+        const genderBatches = gender === "male" ? grouped[orderDate].male : grouped[orderDate].female;
+        let batch = genderBatches.find((b) => b.batch_number === batchNum);
+
+        if (!batch) {
+          batch = {
+            batch_number: batchNum,
+            orders: [],
+            batch_status: order.batch_status || "pending",
+            total_orders: 0,
+            date: orderDate,
+            gender: gender,
+          };
+          genderBatches.push(batch);
+        }
+
+        batch.orders.push(order);
+        batch.total_orders = batch.orders.length;
+
+        // Update batch status based on most common status
+        const statusCounts = batch.orders.reduce((acc, o) => {
+          acc[o.batch_status || "pending"] = (acc[o.batch_status || "pending"] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        batch.batch_status = Object.entries(statusCounts).reduce((a, b) =>
+          a[1] > b[1] ? a : b
+        )[0];
       });
 
-      // Convert to array and calculate batch status
-      const batchesArray: Batch[] = Array.from(batchMap.entries()).map(
-        ([batch_number, orders]) => {
-          // Batch status is the most common status among orders
-          const statusCounts = orders.reduce((acc, order) => {
-            acc[order.batch_status || "pending"] = (acc[order.batch_status || "pending"] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-          
-          const batch_status = Object.entries(statusCounts).reduce((a, b) =>
-            a[1] > b[1] ? a : b
-          )[0];
+      // Sort batches within each gender group
+      Object.values(grouped).forEach((dateGroup) => {
+        dateGroup.male.sort((a, b) => b.batch_number - a.batch_number);
+        dateGroup.female.sort((a, b) => b.batch_number - a.batch_number);
+      });
 
-          return {
-            batch_number,
-            orders,
-            batch_status,
-            total_orders: orders.length,
-          };
-        }
-      );
-
-      setBatches(batchesArray);
+      setGroupedBatches(grouped);
+      
+      // Set initial selected date to today
+      const today = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      setSelectedDate(Object.keys(grouped).includes(today) ? today : Object.keys(grouped)[0] || "");
     } catch (error) {
       console.error("Error fetching batches:", error);
       toast.error("Failed to load batches");
@@ -160,13 +209,39 @@ const AdminBatches = () => {
     }
   };
 
-  const filteredBatches = batches.filter((batch) =>
-    batch.orders.some(
-      (order) =>
-        order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer_phone.includes(searchQuery)
-    )
+  // Get batches for selected date and gender
+  const getDisplayBatches = () => {
+    if (!selectedDate || !groupedBatches[selectedDate]) return [];
+    
+    const dateGroup = groupedBatches[selectedDate];
+    let batches: Batch[] = [];
+
+    if (selectedGender === "all") {
+      batches = [...dateGroup.male, ...dateGroup.female];
+    } else if (selectedGender === "male") {
+      batches = dateGroup.male;
+    } else {
+      batches = dateGroup.female;
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      return batches.filter((batch) =>
+        batch.orders.some(
+          (order) =>
+            order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.customer_phone.includes(searchQuery)
+        )
+      );
+    }
+
+    return batches;
+  };
+
+  const displayBatches = getDisplayBatches();
+  const dates = Object.keys(groupedBatches).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
   );
 
   if (roleLoading || loading) {
@@ -186,7 +261,7 @@ const AdminBatches = () => {
               Batch Management
             </h1>
             <p className="text-muted-foreground mt-1">
-              Total Orders: {totalOrders} | Batches: {batches.length}
+              Total Orders: {totalOrders} | Dates: {dates.length}
             </p>
           </div>
           <Button onClick={() => navigate("/admin/scan")} size="lg">
@@ -195,6 +270,56 @@ const AdminBatches = () => {
           </Button>
         </div>
 
+        {/* Date Selector */}
+        <div className="mb-6">
+          <label className="text-sm font-medium mb-2 block">Select Date</label>
+          <select
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full h-11 px-3 rounded-md border border-input bg-background"
+          >
+            {dates.map((date) => {
+              const maleCount = groupedBatches[date].male.reduce((sum, b) => sum + b.total_orders, 0);
+              const femaleCount = groupedBatches[date].female.reduce((sum, b) => sum + b.total_orders, 0);
+              return (
+                <option key={date} value={date}>
+                  {date} - Male: {maleCount}, Female: {femaleCount}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* Gender Filter */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={selectedGender === "all" ? "default" : "outline"}
+            onClick={() => setSelectedGender("all")}
+            className="flex-1"
+          >
+            All ({selectedDate && groupedBatches[selectedDate] ? 
+              groupedBatches[selectedDate].male.reduce((sum, b) => sum + b.total_orders, 0) +
+              groupedBatches[selectedDate].female.reduce((sum, b) => sum + b.total_orders, 0) : 0})
+          </Button>
+          <Button
+            variant={selectedGender === "male" ? "default" : "outline"}
+            onClick={() => setSelectedGender("male")}
+            className="flex-1"
+          >
+            Male ({selectedDate && groupedBatches[selectedDate] ? 
+              groupedBatches[selectedDate].male.reduce((sum, b) => sum + b.total_orders, 0) : 0})
+          </Button>
+          <Button
+            variant={selectedGender === "female" ? "default" : "outline"}
+            onClick={() => setSelectedGender("female")}
+            className="flex-1"
+          >
+            Female ({selectedDate && groupedBatches[selectedDate] ? 
+              groupedBatches[selectedDate].female.reduce((sum, b) => sum + b.total_orders, 0) : 0})
+          </Button>
+        </div>
+
+        {/* Search */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -207,88 +332,96 @@ const AdminBatches = () => {
           </div>
         </div>
 
+        {/* Batches Display */}
         <div className="space-y-6">
-          {filteredBatches.map((batch) => {
-            const statusConfig = getStatusConfig(batch.batch_status);
-            return (
-              <Card key={batch.batch_number} className="shadow-card">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5" />
-                        Batch {batch.batch_number}
-                      </CardTitle>
-                      <Badge variant={statusConfig.variant} className={statusConfig.color}>
-                        {statusConfig.label}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {batch.total_orders} orders
-                      </span>
+          {displayBatches.length === 0 ? (
+            <Card className="p-12 text-center text-muted-foreground">
+              <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No batches found for the selected filters</p>
+            </Card>
+          ) : (
+            displayBatches.map((batch) => {
+              const statusConfig = getStatusConfig(batch.batch_status);
+              return (
+                <Card key={batch.batch_number} className="shadow-card">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <CardTitle className="flex items-center gap-2">
+                          <Package className="h-5 w-5" />
+                          Batch {batch.batch_number} ({batch.gender})
+                        </CardTitle>
+                        <Badge variant={statusConfig.variant} className={statusConfig.color}>
+                          {statusConfig.label}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {batch.total_orders} orders
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`batch-${batch.batch_number}`}
+                          checked={batch.batch_status === "completed"}
+                          onCheckedChange={() => markBatchComplete(batch.batch_number)}
+                          disabled={batch.batch_status === "completed"}
+                        />
+                        <label
+                          htmlFor={`batch-${batch.batch_number}`}
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Mark Complete
+                        </label>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id={`batch-${batch.batch_number}`}
-                        checked={batch.batch_status === "completed"}
-                        onCheckedChange={() => markBatchComplete(batch.batch_number)}
-                        disabled={batch.batch_status === "completed"}
-                      />
-                      <label
-                        htmlFor={`batch-${batch.batch_number}`}
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        Mark Complete
-                      </label>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {batch.orders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between p-4 bg-card/50 rounded-lg border"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">{order.order_number}</span>
-                            <Badge variant="outline">{order.status}</Badge>
-                            {order.received_at && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {batch.orders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between p-4 bg-card/50 rounded-lg border"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">{order.order_number}</span>
+                              <Badge variant="outline">{order.status}</Badge>
+                              {order.received_at && (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {order.customer_name} • {order.customer_phone} • Room {order.room_number}
+                            </div>
+                            <div className="text-sm font-medium mt-1">₹{order.total_amount}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            {order.status === "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateOrderStatus(order.id, "processing")}
+                              >
+                                Mark Received
+                              </Button>
+                            )}
+                            {order.status === "processing" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateOrderStatus(order.id, "ready")}
+                              >
+                                Mark Ready
+                              </Button>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {order.customer_name} • {order.customer_phone} • Room {order.room_number}
-                          </div>
-                          <div className="text-sm font-medium mt-1">₹{order.total_amount}</div>
                         </div>
-                        <div className="flex gap-2">
-                          {order.status === "pending" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateOrderStatus(order.id, "processing")}
-                            >
-                              Mark Received
-                            </Button>
-                          )}
-                          {order.status === "processing" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateOrderStatus(order.id, "ready")}
-                            >
-                              Mark Ready
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
