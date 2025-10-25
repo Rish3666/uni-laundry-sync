@@ -83,35 +83,74 @@ const Checkout = () => {
       const orderNumber = `LND${Date.now().toString().slice(-8)}`;
       const deliveryQrCode = `DLV-${Date.now().toString()}-${user.id.slice(0, 8)}`;
 
-      // Store pending order data in localStorage for scanning
-      const pendingOrder = {
-        user_id: user.id,
-        order_number: orderNumber,
-        customer_name: profile.student_name,
-        customer_phone: profile.mobile_no,
-        customer_email: profile.email,
-        student_id: profile.student_id,
-        room_number: profile.room_number,
-        total_amount: totalAmount,
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === "cash" ? "pending" : "paid",
-        delivery_qr_code: deliveryQrCode,
-        cart: cart,
-      };
+      // Create order in database immediately
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          customer_name: profile.student_name,
+          customer_phone: profile.mobile_no,
+          customer_email: profile.email,
+          student_id: profile.student_id,
+          room_number: profile.room_number,
+          total_amount: totalAmount,
+          status: "pending",
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "cash" ? "pending" : "paid",
+          delivery_qr_code: deliveryQrCode,
+        })
+        .select()
+        .single();
 
-      localStorage.setItem("pendingOrder", JSON.stringify(pendingOrder));
+      if (orderError) {
+        toast.error("Failed to create order");
+        console.error(orderError);
+        setLoading(false);
+        return;
+      }
+
+      // Insert order items
+      const orderItems = cart.map((item) => ({
+        order_id: order.id,
+        item_id: item.itemId,
+        service_type_id: item.id.split("-")[1],
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+        service_name: item.serviceType,
+        item_name: item.name,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) {
+        console.error("Error inserting order items:", itemsError);
+        toast.error("Failed to add order items");
+        setLoading(false);
+        return;
+      }
+
+      // Clear cart
+      localStorage.removeItem("cart");
       
-      console.log("Pending order created:", pendingOrder);
+      console.log("Order created:", order);
       console.log("QR Code value:", deliveryQrCode);
       console.log("Setting orderCreated state...");
 
-      // Ensure state update happens
-      setOrderCreated(pendingOrder);
+      // Show QR code screen
+      setOrderCreated({
+        order_number: orderNumber,
+        total_amount: totalAmount,
+        delivery_qr_code: deliveryQrCode,
+      });
       
-      toast.success("QR Generated! Scroll down to see it");
+      toast.success("Order created! Show QR to admin");
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to generate order");
+      toast.error("Failed to create order");
     } finally {
       setLoading(false);
     }
@@ -162,21 +201,18 @@ const Checkout = () => {
               <div className="text-center space-y-2">
                 <p className="font-semibold text-lg">Order #{orderCreated.order_number}</p>
                 <p className="text-muted-foreground">Total: ₹{orderCreated.total_amount}</p>
-                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm text-primary font-medium">
-                    📱 Scan this QR code to confirm your order
+                <div className="p-4 bg-info/10 border border-info/20 rounded-lg">
+                  <p className="text-sm text-info font-medium">
+                    🎯 Show this QR code to the admin
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Click the button below to open your camera and scan
+                    The admin will scan it to receive your laundry
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
-                <Button onClick={() => navigate("/order-confirm-scanner")} className="w-full" size="lg">
-                  Scan QR to Confirm
-                </Button>
                 <Button variant="outline" onClick={() => navigate("/orders")} className="w-full">
-                  View My Orders
+                  Go to My Orders
                 </Button>
                 <Button variant="ghost" onClick={() => navigate("/")} className="w-full">
                   Back to Home
