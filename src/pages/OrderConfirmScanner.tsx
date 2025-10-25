@@ -35,35 +35,76 @@ const OrderConfirmScanner = () => {
           return;
         }
 
-        // Find order by delivery QR code and user
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("delivery_qr_code", decodedText)
-          .eq("user_id", user.id)
-          .eq("status", "awaiting_receipt")
-          .maybeSingle();
-
-        if (orderError || !order) {
-          toast.error("Invalid QR code or order already confirmed");
-          setLoading(false);
+        // Get pending order from localStorage
+        const pendingOrderStr = localStorage.getItem("pendingOrder");
+        if (!pendingOrderStr) {
+          toast.error("No pending order found");
           navigate("/");
           return;
         }
 
-        // Update order status to pending and set received_at
-        const { error: updateError } = await supabase
-          .from("orders")
-          .update({ 
-            status: "pending",
-            received_at: new Date().toISOString(),
-          })
-          .eq("id", order.id);
+        const pendingOrder = JSON.parse(pendingOrderStr);
 
-        if (updateError) {
-          toast.error("Failed to confirm order");
+        // Verify QR code matches
+        if (pendingOrder.delivery_qr_code !== decodedText) {
+          toast.error("QR code doesn't match your order");
           setLoading(false);
           return;
+        }
+
+        // Verify user matches
+        if (pendingOrder.user_id !== user.id) {
+          toast.error("This order belongs to a different user");
+          setLoading(false);
+          return;
+        }
+
+        // Now insert order into database
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            user_id: pendingOrder.user_id,
+            order_number: pendingOrder.order_number,
+            customer_name: pendingOrder.customer_name,
+            customer_phone: pendingOrder.customer_phone,
+            customer_email: pendingOrder.customer_email,
+            student_id: pendingOrder.student_id,
+            room_number: pendingOrder.room_number,
+            total_amount: pendingOrder.total_amount,
+            status: "pending",
+            payment_method: pendingOrder.payment_method,
+            payment_status: pendingOrder.payment_status,
+            delivery_qr_code: pendingOrder.delivery_qr_code,
+            received_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (orderError) {
+          toast.error("Failed to create order");
+          console.error(orderError);
+          setLoading(false);
+          return;
+        }
+
+        // Insert order items
+        const orderItems = pendingOrder.cart.map((item: any) => ({
+          order_id: order.id,
+          item_id: item.itemId,
+          service_type_id: item.id.split("-")[1],
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+          service_name: item.serviceType,
+          item_name: item.name,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(orderItems);
+
+        if (itemsError) {
+          console.error("Error inserting order items:", itemsError);
         }
 
         // Call submit-order edge function
@@ -74,6 +115,10 @@ const OrderConfirmScanner = () => {
         if (functionError) {
           console.error("Error calling submit-order:", functionError);
         }
+
+        // Clear cart and pending order
+        localStorage.removeItem("cart");
+        localStorage.removeItem("pendingOrder");
 
         toast.success("Order confirmed successfully!");
         navigate("/orders");
