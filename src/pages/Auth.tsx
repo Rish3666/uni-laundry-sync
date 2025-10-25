@@ -25,38 +25,16 @@ const Auth = () => {
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // Check user role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-        
-        if (roleData?.role === "admin") {
-          navigate("/admin/batches");
-        } else {
-          navigate("/");
-        }
+        navigate("/");
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session && event === "SIGNED_IN") {
-        // Check user role after login
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-        
-        if (roleData?.role === "admin") {
-          navigate("/admin/batches");
-        } else {
-          navigate("/");
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/");
       }
     });
 
@@ -113,33 +91,19 @@ const Auth = () => {
 
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
 
+    setLoading(false);
+
     if (error) {
-      setLoading(false);
       toast.error(error.message);
       return;
     }
 
-    // Check user role
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-
-    setLoading(false);
-
-    if (roleData?.role === "admin") {
-      toast.success("Welcome Admin!");
-      navigate("/admin/batches");
-    } else {
-      toast.success("Logged in successfully!");
-      navigate("/");
-    }
+    toast.success("Logged in successfully!");
   };
 
   return (
@@ -268,12 +232,18 @@ const Auth = () => {
           </Button>
         </form>
 
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-primary hover:underline block w-full"
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
+          </button>
+          <button
+            onClick={() => navigate("/admin/login")}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors block w-full"
+          >
+            Admin? Login here →
           </button>
         </div>
       </Card>

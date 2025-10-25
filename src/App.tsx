@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import AdminLogin from "./pages/AdminLogin";
 import QRScanner from "./pages/QRScanner";
 import Checkout from "./pages/Checkout";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -31,6 +32,7 @@ const App: React.FC = () => {
             <div className="min-h-screen bg-background">
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/qr-scanner" element={<QRScanner />} />
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
