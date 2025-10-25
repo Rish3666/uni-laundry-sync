@@ -271,7 +271,7 @@ const Home = () => {
       }
 
       toast.success("Order submitted successfully!", {
-        description: `Order #${orderNumber}. Delivery QR: ${order.delivery_qr_code}`,
+        description: `Order #${orderNumber}`,
         icon: <QrCode className="w-4 h-4" />,
       });
 
