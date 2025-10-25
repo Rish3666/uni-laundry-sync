@@ -3,16 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Package, 
   Clock, 
   CheckCircle, 
-  XCircle, 
   TrendingUp,
-  Users,
   DollarSign,
   ShieldX,
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  QrCode,
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +46,7 @@ const AdminDashboard = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [orders, setOrders] = useState<Order[]>([]);
   const [batchGroups, setBatchGroups] = useState<BatchGroup[]>([]);
+  const [expandedBatches, setExpandedBatches] = useState<Set<number>>(new Set());
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -52,7 +55,22 @@ const AdminDashboard = () => {
     revenue: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState("all");
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/admin-login");
+  };
+
+  const toggleBatch = (batchNumber: number) => {
+    const newExpanded = new Set(expandedBatches);
+    if (newExpanded.has(batchNumber)) {
+      newExpanded.delete(batchNumber);
+    } else {
+      newExpanded.add(batchNumber);
+    }
+    setExpandedBatches(newExpanded);
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -146,12 +164,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredBatches = selectedTab === "all" 
-    ? batchGroups 
-    : batchGroups.map(batch => ({
-        ...batch,
-        orders: batch.orders.filter(o => o.status === selectedTab)
-      })).filter(batch => batch.orders.length > 0);
+  const filteredBatches = batchGroups;
 
   const statusColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
@@ -196,12 +209,18 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-primary-foreground">Admin Dashboard</h1>
-              <p className="text-primary-foreground/80 text-sm">Manage orders & track performance</p>
+              <p className="text-primary-foreground/80 text-sm">Manage orders & track batches</p>
             </div>
-            <Button onClick={() => navigate("/admin/batches")} variant="secondary" size="lg">
-              <Package className="mr-2 h-4 w-4" />
-              View Batches
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => navigate("/admin/scan")} variant="secondary" size="lg">
+                <QrCode className="mr-2 h-4 w-4" />
+                Scan QR
+              </Button>
+              <Button onClick={handleLogout} variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20" size="lg">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -250,50 +269,52 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="bg-card rounded-lg shadow-card overflow-hidden">
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <div className="border-b border-border px-4">
-              <TabsList className="bg-transparent h-auto p-0 space-x-6">
-                <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-1 pb-3">
-                  All Orders
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-1 pb-3">
-                  Pending
-                </TabsTrigger>
-                <TabsTrigger value="processing" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-1 pb-3">
-                  Processing
-                </TabsTrigger>
-                <TabsTrigger value="ready" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-1 pb-3">
-                  Ready
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value={selectedTab} className="m-0">
-              <div className="divide-y divide-border">
-                {filteredBatches.map((batch) => (
-                  <div key={batch.batch_number} className="p-4">
-                    {/* Batch Header */}
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
-                      <div className="flex items-center gap-3">
-                        <Package className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-lg">
-                          Batch {batch.batch_number}
-                        </h3>
-                        <Badge className={statusColors[batch.batch_status]}>
-                          {batch.batch_status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {batch.orders.length} orders • ₹{batch.total_amount}
-                        </span>
-                      </div>
+        {/* Batches List */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Batches</h2>
+          
+          {filteredBatches.length === 0 ? (
+            <Card className="p-12 text-center text-muted-foreground">
+              <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No batches found</p>
+            </Card>
+          ) : (
+            filteredBatches.map((batch) => (
+              <Card key={batch.batch_number} className="shadow-card overflow-hidden">
+                <CardHeader 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => toggleBatch(batch.batch_number)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {expandedBatches.has(batch.batch_number) ? (
+                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Batch {batch.batch_number}
+                      </CardTitle>
+                      <Badge className={statusColors[batch.batch_status]}>
+                        {batch.batch_status}
+                      </Badge>
                     </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{batch.orders.length} orders</span>
+                      <span className="font-semibold text-foreground">₹{batch.total_amount}</span>
+                    </div>
+                  </div>
+                </CardHeader>
 
-                    {/* Orders in Batch */}
-                    <div className="space-y-3 ml-8">
+                {expandedBatches.has(batch.batch_number) && (
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
                       {batch.orders.map((order) => (
-                        <div key={order.id} className="p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div 
+                          key={order.id} 
+                          className="p-4 bg-muted/30 rounded-lg border border-border"
+                        >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 space-y-2">
                               <div className="flex items-center gap-3">
@@ -369,18 +390,11 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
-
-                {filteredBatches.length === 0 && (
-                  <div className="p-12 text-center text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No orders found</p>
-                  </div>
+                  </CardContent>
                 )}
-              </div>
-            </TabsContent>
-          </Tabs>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

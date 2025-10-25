@@ -134,9 +134,9 @@ const AdminQRScanner = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto p-4 max-w-2xl">
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate("/admin/batches")}>
+          <Button variant="ghost" onClick={() => navigate("/admin")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Batches
+            Back to Dashboard
           </Button>
         </div>
 

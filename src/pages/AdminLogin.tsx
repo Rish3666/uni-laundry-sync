@@ -30,7 +30,7 @@ const AdminLogin = () => {
           .maybeSingle();
         
         if (roleData?.role === "admin") {
-          navigate("/admin/batches");
+          navigate("/admin");
         }
       }
     });
@@ -78,7 +78,7 @@ const AdminLogin = () => {
     }
 
     toast.success("Admin access granted! Welcome!");
-    navigate("/admin/batches");
+    navigate("/admin");
   };
 
   return (
