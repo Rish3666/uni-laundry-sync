@@ -60,17 +60,26 @@ serve(async (req) => {
     }
 
     // Grant admin role using service role (bypasses RLS)
-    const { error } = await supabase
+    // First delete any existing role for this user
+    const { error: deleteError } = await supabase
       .from("user_roles")
-      .upsert({
+      .delete()
+      .eq("user_id", userId);
+
+    if (deleteError) {
+      console.error("Error deleting existing role:", deleteError);
+    }
+
+    // Insert new admin role
+    const { error: insertError } = await supabase
+      .from("user_roles")
+      .insert({
         user_id: userId,
         role: "admin",
-      }, {
-        onConflict: "user_id",
       });
 
-    if (error) {
-      console.error("Error granting admin role:", error);
+    if (insertError) {
+      console.error("Error granting admin role:", insertError);
       return new Response(
         JSON.stringify({ error: "Failed to grant admin role" }),
         {
