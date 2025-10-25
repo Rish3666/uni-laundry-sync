@@ -87,6 +87,7 @@ const Checkout = () => {
           customer_phone: profile.mobile_no,
           customer_email: profile.email,
           student_id: profile.student_id,
+          room_number: profile.room_number,
           total_amount: totalAmount,
           status: "pending",
           payment_method: paymentMethod,
@@ -176,6 +177,10 @@ const Checkout = () => {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Mobile Number</span>
               <span className="font-medium">{profile?.mobile_no || "Not set"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Room Number</span>
+              <span className="font-medium">{profile?.room_number || "Not set"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Email</span>

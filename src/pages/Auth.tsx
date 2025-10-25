@@ -18,6 +18,8 @@ const Auth = () => {
     studentName: "",
     studentId: "",
     mobileNo: "",
+    roomNumber: "",
+    gender: "",
   });
 
   useEffect(() => {
@@ -62,6 +64,8 @@ const Auth = () => {
           student_name: formData.studentName,
           student_id: formData.studentId,
           mobile_no: formData.mobileNo,
+          room_number: formData.roomNumber,
+          gender: formData.gender,
         }
       }
     });
@@ -155,6 +159,34 @@ const Auth = () => {
                     placeholder="Enter your mobile number"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="roomNumber">Room Number</Label>
+                <div className="relative">
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="roomNumber"
+                    value={formData.roomNumber}
+                    onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
+                    className="h-11 pl-10"
+                    placeholder="Enter your room number"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <select
+                  id="gender"
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  className="w-full h-11 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
               </div>
             </>
           )}

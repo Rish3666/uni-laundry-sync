@@ -209,6 +209,7 @@ export type Database = {
           payment_status: string | null
           picked_up_at: string | null
           ready_at: string | null
+          room_number: string | null
           sms_sent: boolean | null
           status: string
           student_id: string | null
@@ -230,6 +231,7 @@ export type Database = {
           payment_status?: string | null
           picked_up_at?: string | null
           ready_at?: string | null
+          room_number?: string | null
           sms_sent?: boolean | null
           status?: string
           student_id?: string | null
@@ -251,6 +253,7 @@ export type Database = {
           payment_status?: string | null
           picked_up_at?: string | null
           ready_at?: string | null
+          room_number?: string | null
           sms_sent?: boolean | null
           status?: string
           student_id?: string | null
@@ -265,9 +268,11 @@ export type Database = {
           created_at: string
           customer_number: string | null
           email: string | null
+          gender: string | null
           id: string
           mobile_no: string | null
           qr_code: string | null
+          room_number: string | null
           student_id: string | null
           student_name: string | null
           updated_at: string
@@ -278,9 +283,11 @@ export type Database = {
           created_at?: string
           customer_number?: string | null
           email?: string | null
+          gender?: string | null
           id?: string
           mobile_no?: string | null
           qr_code?: string | null
+          room_number?: string | null
           student_id?: string | null
           student_name?: string | null
           updated_at?: string
@@ -291,9 +298,11 @@ export type Database = {
           created_at?: string
           customer_number?: string | null
           email?: string | null
+          gender?: string | null
           id?: string
           mobile_no?: string | null
           qr_code?: string | null
+          room_number?: string | null
           student_id?: string | null
           student_name?: string | null
           updated_at?: string
@@ -358,14 +367,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_customer_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_delivery_qr_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_customer_number: { Args: never; Returns: string }
+      generate_delivery_qr_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

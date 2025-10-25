@@ -16,7 +16,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ student_name: "", mobile_no: "", student_id: "" });
+  const [formData, setFormData] = useState({ student_name: "", mobile_no: "", student_id: "", room_number: "", gender: "" });
 
   useEffect(() => { fetchProfile(); }, []);
 
@@ -26,7 +26,7 @@ const Profile = () => {
       if (!user) { navigate("/auth"); return; }
       const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       setProfile(data);
-      if (data) setFormData({ student_name: data.student_name || "", mobile_no: data.mobile_no || "", student_id: data.student_id || "" });
+      if (data) setFormData({ student_name: data.student_name || "", mobile_no: data.mobile_no || "", student_id: data.student_id || "", room_number: data.room_number || "", gender: data.gender || "" });
     } catch (error) {
       toast.error("Failed to load profile");
     } finally {
@@ -110,6 +110,19 @@ const Profile = () => {
               <div><Label>Name</Label><Input value={formData.student_name} onChange={e => setFormData({...formData, student_name: e.target.value})} /></div>
               <div><Label>Mobile</Label><Input value={formData.mobile_no} onChange={e => setFormData({...formData, mobile_no: e.target.value})} /></div>
               <div><Label>ID</Label><Input value={formData.student_id} onChange={e => setFormData({...formData, student_id: e.target.value})} /></div>
+              <div><Label>Room Number</Label><Input value={formData.room_number} onChange={e => setFormData({...formData, room_number: e.target.value})} /></div>
+              <div>
+                <Label>Gender</Label>
+                <select
+                  value={formData.gender}
+                  onChange={e => setFormData({...formData, gender: e.target.value})}
+                  className="w-full h-11 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleUpdateProfile} className="flex-1">Save</Button>
                 <Button onClick={() => setEditing(false)} variant="outline" className="flex-1">Cancel</Button>
@@ -121,6 +134,8 @@ const Profile = () => {
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Student ID</span><span className="font-medium">{profile?.student_id || "Not set"}</span></div>
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Email</span><span className="font-medium">{profile?.email}</span></div>
               <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profile?.mobile_no || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Room Number</span><span className="font-medium">{profile?.room_number || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Gender</span><span className="font-medium">{profile?.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : "Not set"}</span></div>
             </div>
           )}
         </div>

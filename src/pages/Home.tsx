@@ -178,6 +178,41 @@ const Home = () => {
       return;
     }
 
+    // Check total items limit (6 per day)
+    const totalItems = getTotalItems();
+    if (totalItems > 6) {
+      toast.error("Maximum 6 items allowed per day");
+      return;
+    }
+
+    // Check day restrictions based on gender
+    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    
+    if (today === 0) {
+      toast.error("Laundry collection is not available on Sunday");
+      return;
+    }
+
+    if (!profile?.gender) {
+      toast.error("Please update your gender in profile settings");
+      navigate("/profile");
+      return;
+    }
+
+    if (profile.gender === "male") {
+      // Boys: Monday (1), Wednesday (3), Friday (5)
+      if (![1, 3, 5].includes(today)) {
+        toast.error("Boys can only submit laundry on Monday, Wednesday, and Friday");
+        return;
+      }
+    } else if (profile.gender === "female") {
+      // Girls: Tuesday (2), Thursday (4), Saturday (6)
+      if (![2, 4, 6].includes(today)) {
+        toast.error("Girls can only submit laundry on Tuesday, Thursday, and Saturday");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -194,6 +229,7 @@ const Home = () => {
           customer_phone: formData.mobileNo,
           customer_email: profile?.email || null,
           student_id: formData.studentId,
+          room_number: profile?.room_number || null,
           status: "pending",
           payment_status: "pending",
           total_amount: 0,
