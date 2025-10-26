@@ -81,11 +81,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Mark order as completed
+    // Mark order as delivered
     const { error: updateError } = await supabaseClient
       .from('orders')
       .update({ 
-        status: 'completed',
+        status: 'delivered',
         delivered_at: new Date().toISOString()
       })
       .eq('id', order.id);
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Order marked as completed',
+        message: 'Order marked as delivered',
         order: {
           order_number: order.order_number,
           customer_name: order.customer_name
