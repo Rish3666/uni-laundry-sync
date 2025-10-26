@@ -42,6 +42,18 @@ const AdminDeliveryScanner = () => {
       scanner.clear().catch(console.error);
 
       try {
+        // Check if this is an order creation QR (ORD- prefix)
+        if (decodedText.startsWith("ORD-")) {
+          toast.error("Wrong Scanner!", {
+            description: "This is an order creation QR. Please use the Pickup Scanner to receive laundry.",
+          });
+          setLoading(false);
+          setTimeout(() => {
+            scanner.render(onScanSuccess, () => {});
+          }, 3000);
+          return;
+        }
+
         // Query for delivery QR code
         const { data: order, error } = await supabase
           .from("orders")
