@@ -131,10 +131,71 @@ const AdminReturnScanner = () => {
       setScannedOrder(null);
       setLoading(false);
       
-      // Restart scanner
+      // Restart scanner without page reload
       setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+        if (scannerRef.current) {
+          const onScanSuccess = async (decodedText: string) => {
+            setLoading(true);
+            scannerRef.current?.clear().catch(console.error);
+
+            try {
+              if (decodedText.startsWith("ORD-")) {
+                toast.error("Wrong Scanner!", {
+                  description: "This is an order submission QR. Please use 'Receive Laundry' scanner to accept from students.",
+                });
+                setLoading(false);
+                setTimeout(() => {
+                  scannerRef.current?.render(onScanSuccess, () => {});
+                }, 3000);
+                return;
+              }
+
+              const { data: order, error } = await supabase
+                .from("orders")
+                .select("*")
+                .or(`delivery_qr_code.eq.${decodedText},pickup_token.eq.${decodedText}`)
+                .maybeSingle();
+
+              if (error) {
+                console.error("Database error:", error);
+                toast.error("Database error");
+                setLoading(false);
+                setTimeout(() => {
+                  scannerRef.current?.render(onScanSuccess, () => {});
+                }, 2000);
+                return;
+              }
+
+              if (!order) {
+                toast.error("Invalid delivery QR code");
+                setLoading(false);
+                setTimeout(() => {
+                  scannerRef.current?.render(onScanSuccess, () => {});
+                }, 2000);
+                return;
+              }
+
+              if (order.status !== "ready") {
+                toast.error(`Order status is ${order.status}, not ready for delivery`);
+                setLoading(false);
+                setTimeout(() => {
+                  scannerRef.current?.render(onScanSuccess, () => {});
+                }, 2000);
+                return;
+              }
+
+              setScannedOrder(order);
+              toast.success("Valid delivery QR code scanned!");
+            } catch (error) {
+              console.error("QR scan error:", error);
+              toast.error("Failed to process QR code");
+              setLoading(false);
+            }
+          };
+          
+          scannerRef.current.render(onScanSuccess, () => {});
+        }
+      }, 1000);
     } catch (error) {
       console.error("Error updating order:", error);
       toast.error("Failed to update order");
