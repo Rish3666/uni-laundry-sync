@@ -54,11 +54,11 @@ const AdminReturnScanner = () => {
           return;
         }
 
-        // Query for delivery QR code
+        // Query for delivery QR code or pickup token
         const { data: order, error } = await supabase
           .from("orders")
           .select("*")
-          .eq("delivery_qr_code", decodedText)
+          .or(`delivery_qr_code.eq.${decodedText},pickup_token.eq.${decodedText}`)
           .maybeSingle();
 
         if (error) {
