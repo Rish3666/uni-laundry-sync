@@ -126,7 +126,7 @@ const AdminReceiveScanner = () => {
               student_id: profile.student_id,
               room_number: profile.room_number,
               total_amount: 0, // Will be updated when items are added
-              status: "received",
+              status: "processing",
               payment_method: "cash",
               payment_status: "pending",
               delivery_qr_code: decodedText,
