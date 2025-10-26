@@ -220,73 +220,24 @@ const Home = () => {
       }
     }
 
-    setLoading(true);
-
-    try {
-      // Generate order number
-      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: userId,
-          order_number: orderNumber,
-          customer_name: formData.studentName,
-          customer_phone: formData.mobileNo,
-          customer_email: profile?.email || null,
-          student_id: formData.studentId,
-          room_number: profile?.room_number || null,
-          status: "pending",
-          payment_status: "pending",
-          total_amount: getTotalPrice(),
-          notes: `Category: ${selectedCategory}`,
-        })
-        .select()
-        .single();
-
-      if (orderError) {
-        console.error("Order creation error:", orderError);
-        throw new Error("Failed to create order");
-      }
-
-      // Create order items
-      const orderItems = cart.map((item) => ({
-        order_id: order.id,
-        item_name: item.name,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity,
-        service_name: "Regular Wash",
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Order items error:", itemsError);
-        await supabase.from("orders").delete().eq("id", order.id);
-        throw new Error("Failed to add items to order");
-      }
-
-      toast.success("Order submitted successfully!", {
-        description: `Order #${orderNumber}`,
-        icon: <QrCode className="w-4 h-4" />,
-      });
-
-      navigate("/orders");
-
-      // Reset form
-      setStep("category");
-      setSelectedCategory("");
-      setCart([]);
-    } catch (error) {
-      console.error("Error submitting order:", error);
-      toast.error("Failed to submit order. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    // Save cart and navigate to checkout
+    localStorage.setItem("cart", JSON.stringify(cart.map(item => ({
+      id: item.id,
+      itemId: item.id,
+      name: item.name,
+      emoji: "👕", // Default emoji
+      category: selectedCategory,
+      serviceType: "Regular Wash",
+      quantity: item.quantity,
+      price: item.price,
+    }))));
+    
+    navigate("/checkout");
+    
+    // Reset form
+    setStep("category");
+    setSelectedCategory("");
+    setCart([]);
   };
 
   const getItemIcon = (itemId: string) => {
