@@ -42,13 +42,14 @@ const AdminReceiveScanner = () => {
       try {
         // Check if this is a new order QR code (starts with ORD-)
         if (decodedText.startsWith("ORD-")) {
-          // Get pending order data from customer's device (they need to share it)
-          // For now, we'll parse the QR code to get customer info
-          // In a real app, customer would need to be present or data would be in QR
+          console.log("Scanned QR code:", decodedText);
           
-          // Extract user_id from QR code
+          // Extract user_id from QR code (format: ORD-timestamp-uuid)
+          // UUID contains dashes, so we need to rejoin everything after the second dash
           const parts = decodedText.split("-");
-          const userId = parts[2];
+          const userId = parts.slice(2).join("-"); // Rejoin UUID parts
+          
+          console.log("Extracted user ID:", userId);
           
           // Fetch user's profile to get order details
           const { data: profile, error: profileError } = await supabase
@@ -56,6 +57,8 @@ const AdminReceiveScanner = () => {
             .select("*")
             .eq("user_id", userId)
             .maybeSingle();
+
+          console.log("Profile lookup result:", { profile, profileError });
 
           if (profileError || !profile) {
             toast.error("Customer not found. Please ask customer to complete their profile.");
