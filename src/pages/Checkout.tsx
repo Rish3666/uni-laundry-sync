@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { isPublicHoliday, getHolidayName } from "@/lib/holidays";
 
 interface CartItem {
   id: string;
@@ -65,6 +66,14 @@ const Checkout = () => {
     
     if (cart.length === 0) {
       toast.error("Your cart is empty");
+      return;
+    }
+
+    // Check for public holidays
+    const currentDate = new Date();
+    if (isPublicHoliday(currentDate)) {
+      const holidayName = getHolidayName(currentDate);
+      toast.error(`Orders are not accepted on ${holidayName}. Please try again on the next working day.`);
       return;
     }
 

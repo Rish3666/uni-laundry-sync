@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { orderFormSchema } from "@/lib/validation";
+import { isPublicHoliday, getHolidayName } from "@/lib/holidays";
 
 interface CartItem {
   id: string;
@@ -188,6 +189,14 @@ const Home = () => {
 
     if (cart.length === 0) {
       toast.error("Please add items to cart");
+      return;
+    }
+
+    // Check for public holidays
+    const currentDate = new Date();
+    if (isPublicHoliday(currentDate)) {
+      const holidayName = getHolidayName(currentDate);
+      toast.error(`Orders are not accepted on ${holidayName}. Please try again on the next working day.`);
       return;
     }
 
