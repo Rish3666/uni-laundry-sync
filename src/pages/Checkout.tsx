@@ -81,7 +81,7 @@ const Checkout = () => {
 
       const totalAmount = getTotalAmount();
       const orderNumber = `LND${Date.now().toString().slice(-8)}`;
-      const deliveryQrCode = `ORD-${Date.now().toString()}-${user.id.slice(0, 8)}`;
+      const deliveryQrCode = `ORD-${Date.now().toString()}-${user.id}`;
 
       // Store pending order data (not in database yet)
       const pendingOrder = {

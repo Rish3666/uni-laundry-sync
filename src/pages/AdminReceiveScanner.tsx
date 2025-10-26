@@ -55,7 +55,7 @@ const AdminReceiveScanner = () => {
             .from("profiles")
             .select("*")
             .eq("user_id", userId)
-            .single();
+            .maybeSingle();
 
           if (profileError || !profile) {
             toast.error("Customer not found. Please ask customer to complete their profile.");
