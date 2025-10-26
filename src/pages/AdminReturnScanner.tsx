@@ -80,9 +80,9 @@ const AdminReturnScanner = () => {
           return;
         }
 
-        // Check if order is awaiting receipt
-        if (order.status !== "awaiting_receipt") {
-          toast.error(`Order already ${order.status}`);
+        // Check if order is ready for return
+        if (order.status !== "ready") {
+          toast.error(`Order status is ${order.status}, not ready for delivery`);
           setLoading(false);
           setTimeout(() => {
             scanner.render(onScanSuccess, () => {});
@@ -115,31 +115,19 @@ const AdminReturnScanner = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // First update order status to pending and set received_at
+      // Update order status to delivered and set delivered_at
       const { error: updateError } = await supabase
         .from("orders")
         .update({
-          status: "pending",
-          received_at: new Date().toISOString(),
+          status: "delivered",
+          delivered_at: new Date().toISOString(),
           scanned_by: user?.id,
         })
         .eq("id", scannedOrder.id);
 
       if (updateError) throw updateError;
 
-      // Then invoke the submit-order function for n8n processing
-      await supabase.functions.invoke("submit-order", {
-        body: {
-          order_id: scannedOrder.id,
-          order_number: scannedOrder.order_number,
-          customer_name: scannedOrder.customer_name,
-          customer_phone: scannedOrder.customer_phone,
-          total_amount: scannedOrder.total_amount,
-          payment_method: scannedOrder.payment_method,
-        },
-      });
-
-      toast.success("Laundry received! Order confirmed ✅");
+      toast.success("Laundry delivered! Order completed ✅");
       setScannedOrder(null);
       setLoading(false);
       
@@ -193,7 +181,7 @@ const AdminReturnScanner = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-semibold text-warning">Awaiting Receipt</p>
+                  <p className="font-semibold text-success">Ready for Delivery</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
