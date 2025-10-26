@@ -243,13 +243,13 @@ const AdminDashboard = () => {
               <p className="text-primary-foreground/80 text-sm">Manage orders & track batches</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => navigate("/admin/scan-delivery")} variant="secondary" size="sm">
+              <Button onClick={() => navigate("/admin/scan-pickup")} variant="secondary" size="sm">
                 <QrCode className="mr-2 h-4 w-4" />
                 Receive Laundry
               </Button>
-              <Button onClick={() => navigate("/admin/scan-pickup")} variant="secondary" size="sm">
+              <Button onClick={() => navigate("/admin/scan-delivery")} variant="secondary" size="sm">
                 <QrCode className="mr-2 h-4 w-4" />
-                Give Laundry
+                Return Laundry
               </Button>
               <Button onClick={handleLogout} variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />

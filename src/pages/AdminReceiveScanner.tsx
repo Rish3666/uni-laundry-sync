@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const AdminPickupScanner = () => {
+const AdminReceiveScanner = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(false);
@@ -197,10 +197,10 @@ const AdminPickupScanner = () => {
 
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Scan QR Code
+            Receive Laundry from Students
           </h1>
           <p className="text-muted-foreground">
-            Scan customer's order QR (ORD-) to receive laundry or pickup QR (PKP-) to complete delivery
+            Scan customer's order QR (ORD-) to accept laundry or pickup QR (PKP-) to complete delivery
           </p>
         </div>
 
@@ -219,4 +219,4 @@ const AdminPickupScanner = () => {
   );
 };
 
-export default AdminPickupScanner;
+export default AdminReceiveScanner;

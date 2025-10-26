@@ -8,7 +8,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const AdminDeliveryScanner = () => {
+const AdminReturnScanner = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ const AdminDeliveryScanner = () => {
         // Check if this is an order creation QR (ORD- prefix)
         if (decodedText.startsWith("ORD-")) {
           toast.error("Wrong Scanner!", {
-            description: "This is an order creation QR. Please use the Pickup Scanner to receive laundry.",
+            description: "This is an order submission QR. Please use 'Receive Laundry' scanner to accept from students.",
           });
           setLoading(false);
           setTimeout(() => {
@@ -173,10 +173,10 @@ const AdminDeliveryScanner = () => {
 
         <div className="text-center space-y-2 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Scan Delivery QR Code
+            Return Clean Laundry to Students
           </h1>
           <p className="text-muted-foreground">
-            Scan to confirm laundry received from student
+            Scan to confirm clean laundry returned to student
           </p>
         </div>
 
@@ -254,4 +254,4 @@ const AdminDeliveryScanner = () => {
   );
 };
 
-export default AdminDeliveryScanner;
+export default AdminReturnScanner;
