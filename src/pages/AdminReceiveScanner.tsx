@@ -42,14 +42,29 @@ const AdminReceiveScanner = () => {
       try {
         // Check if this is a new order QR code (starts with ORD-)
         if (decodedText.startsWith("ORD-")) {
-          console.log("Scanned QR code:", decodedText);
+          console.log("=== QR CODE SCANNED ===");
+          console.log("Raw QR Code:", decodedText);
           
           // Extract user_id from QR code (format: ORD-timestamp-uuid)
           // UUID contains dashes, so we need to rejoin everything after the second dash
           const parts = decodedText.split("-");
+          console.log("Split parts:", parts);
+          console.log("Parts count:", parts.length);
+          
+          // Should be: ['ORD', 'timestamp', 'uuid-part1', 'uuid-part2', 'uuid-part3', 'uuid-part4', 'uuid-part5']
+          if (parts.length < 7) {
+            toast.error("Invalid QR code format. Please generate a new QR code from checkout.");
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+          
           const userId = parts.slice(2).join("-"); // Rejoin UUID parts
           
-          console.log("Extracted user ID:", userId);
+          console.log("Extracted User ID:", userId);
+          console.log("User ID length:", userId.length);
           
           // Fetch user's profile to get order details
           const { data: profile, error: profileError } = await supabase
@@ -60,8 +75,19 @@ const AdminReceiveScanner = () => {
 
           console.log("Profile lookup result:", { profile, profileError });
 
-          if (profileError || !profile) {
-            toast.error("Customer not found. Please ask customer to complete their profile.");
+          if (profileError) {
+            console.error("Database error:", profileError);
+            toast.error("Database error: " + profileError.message);
+            setLoading(false);
+            setTimeout(() => {
+              scanner.render(onScanSuccess, () => {});
+            }, 2000);
+            return;
+          }
+
+          if (!profile) {
+            toast.error(`Customer not found for ID: ${userId.substring(0, 8)}...`);
+            console.error("No profile found for user_id:", userId);
             setLoading(false);
             setTimeout(() => {
               scanner.render(onScanSuccess, () => {});

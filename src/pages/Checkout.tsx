@@ -81,7 +81,16 @@ const Checkout = () => {
 
       const totalAmount = getTotalAmount();
       const orderNumber = `LND${Date.now().toString().slice(-8)}`;
-      const deliveryQrCode = `ORD-${Date.now().toString()}-${user.id}`;
+      
+      // Generate QR with FULL UUID (CRITICAL: DO NOT slice or truncate user.id)
+      const timestamp = Date.now().toString();
+      const deliveryQrCode = `ORD-${timestamp}-${user.id}`;
+      
+      console.log("=== ORDER QR GENERATION ===");
+      console.log("Full User ID:", user.id);
+      console.log("Timestamp:", timestamp);
+      console.log("Complete QR Code:", deliveryQrCode);
+      console.log("QR Parts Count:", deliveryQrCode.split("-").length);
 
       // Store pending order data (not in database yet)
       const pendingOrder = {
@@ -99,11 +108,12 @@ const Checkout = () => {
         cart: cart,
       };
 
-      // Save to localStorage for admin to process
-      localStorage.setItem("pendingOrder", JSON.stringify(pendingOrder));
+      // Clear any old pending orders and cart
+      localStorage.removeItem("pendingOrder");
+      localStorage.removeItem("cart");
       
-      console.log("Pending order created:", pendingOrder);
-      console.log("QR Code value:", deliveryQrCode);
+      // Save new pending order
+      localStorage.setItem("pendingOrder", JSON.stringify(pendingOrder));
 
       // Show QR code screen
       setOrderCreated({
@@ -112,7 +122,7 @@ const Checkout = () => {
         delivery_qr_code: deliveryQrCode,
       });
       
-      toast.success("QR Generated! Show it to admin for pickup");
+      toast.success("✅ Fresh QR Generated! Show to admin");
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to create order");
