@@ -110,7 +110,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-subtle">
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Laundry Service</h1>
+          <h1 className="text-3xl font-bold">SpinSync</h1>
           <p className="text-muted-foreground">
             {isLogin ? "Welcome back! Please login." : "Create your account"}
           </p>
