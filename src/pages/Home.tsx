@@ -285,11 +285,10 @@ const Home = () => {
     <div className="min-h-[calc(100vh-8rem)] p-4 pb-24 animate-fade-in">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            UniLaundry Manager
+            SpinSync
           </h1>
-          <p className="text-muted-foreground">Quick and easy laundry orders for students</p>
         </div>
 
         {/* Progress Indicator */}
