@@ -141,7 +141,7 @@ const ItemSelection = () => {
               className="p-4 flex items-center justify-between hover:shadow-soft transition-all duration-200 border border-border/50"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
                   <span className="text-2xl">👕</span>
                 </div>
                 <div>
