@@ -8,95 +8,101 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 20% 10%;
+    /* Cozy Freshness Theme - Light & Airy */
+    --background: 200 40% 98%;
+    --foreground: 210 15% 25%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 210 15% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 210 15% 25%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 200 65% 75%;
+    --primary-foreground: 210 15% 25%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 340 45% 92%;
+    --secondary-foreground: 210 15% 25%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 200 30% 95%;
+    --muted-foreground: 210 12% 50%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 340 55% 85%;
+    --accent-foreground: 210 15% 25%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 145 50% 60%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 35 85% 65%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --info: 200 65% 75%;
+    --info-foreground: 210 15% 25%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 60%;
+    --border: 200 25% 90%;
+    --input: 200 25% 90%;
+    --ring: 200 65% 75%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Custom tokens for laundry app */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
-    --shadow-card: 0 4px 12px -2px hsl(217 91% 60% / 0.1);
-    --shadow-elevated: 0 8px 24px -4px hsl(217 91% 60% / 0.15);
+    /* Cozy Freshness custom tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(200 65% 75%), hsl(340 55% 85%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(200 40% 97%));
+    --gradient-bubble: radial-gradient(circle, hsl(200 65% 85% / 0.3), transparent);
+    --shadow-card: 0 4px 20px -4px hsl(200 65% 75% / 0.15);
+    --shadow-elevated: 0 8px 32px -8px hsl(200 65% 75% / 0.2);
+    --shadow-soft: 0 2px 12px -2px hsl(340 55% 85% / 0.12);
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 220 10% 95%;
+    /* Cozy Freshness Dark Mode - Soft & Comfortable */
+    --background: 210 20% 12%;
+    --foreground: 200 15% 92%;
 
-    --card: 220 20% 12%;
-    --card-foreground: 220 10% 95%;
+    --card: 210 18% 16%;
+    --card-foreground: 200 15% 92%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 210 18% 16%;
+    --popover-foreground: 200 15% 92%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 200 50% 65%;
+    --primary-foreground: 210 20% 12%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 220 10% 95%;
+    --secondary: 340 35% 30%;
+    --secondary-foreground: 200 15% 92%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 210 15% 22%;
+    --muted-foreground: 200 12% 65%;
 
-    --accent: 217 91% 60%;
+    --accent: 340 45% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 65% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 145 45% 55%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 35 75% 60%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --info: 200 50% 65%;
+    --info-foreground: 210 20% 12%;
 
-    --border: 220 15% 22%;
-    --input: 220 15% 22%;
-    --ring: 217 91% 60%;
+    --border: 210 15% 24%;
+    --input: 210 15% 24%;
+    --ring: 200 50% 65%;
 
     /* Dark mode custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 55%), hsl(217 91% 65%));
-    --gradient-card: linear-gradient(180deg, hsl(220 20% 12%), hsl(220 20% 14%));
-    --shadow-card: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
-    --shadow-elevated: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
+    --gradient-primary: linear-gradient(135deg, hsl(200 50% 65%), hsl(340 45% 60%));
+    --gradient-card: linear-gradient(180deg, hsl(210 18% 16%), hsl(210 18% 18%));
+    --gradient-bubble: radial-gradient(circle, hsl(200 50% 65% / 0.2), transparent);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
+    --shadow-soft: 0 2px 12px -2px hsl(340 45% 60% / 0.2);
   }
 }
 
