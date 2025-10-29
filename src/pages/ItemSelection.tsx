@@ -138,14 +138,14 @@ const ItemSelection = () => {
           return (
             <Card
               key={item.id}
-              className="p-4 flex items-center justify-between hover:shadow-card transition-all"
+              className="p-4 flex items-center justify-between hover:shadow-soft transition-all duration-200 border border-border/50"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center">
                   <span className="text-2xl">👕</span>
                 </div>
                 <div>
-                  <h3 className="font-medium">{item.name}</h3>
+                  <h3 className="font-medium text-base">{item.name}</h3>
                   {cartItem && (
                     <p className="text-sm text-muted-foreground">
                       Qty: {cartItem.quantity}
@@ -155,9 +155,10 @@ const ItemSelection = () => {
               </div>
               <Button
                 onClick={() => addToCart(item)}
-                className="bg-primary hover:bg-primary/90 h-9 px-4"
+                size="sm"
+                className="rounded-full"
               >
-                Add to cart
+                Add
               </Button>
             </Card>
           );

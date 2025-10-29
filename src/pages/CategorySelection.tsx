@@ -13,25 +13,25 @@ const CategorySelection = () => {
       id: "others",
       name: "Others",
       icon: Package,
-      color: "from-amber-500 to-amber-600",
+      bgColor: "bg-muted",
     },
     {
       id: "mens-wear",
       name: "Men's Wear",
       icon: User,
-      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-primary/20",
     },
     {
       id: "womens-wear",
       name: "Women's Wear",
       icon: Users,
-      color: "from-pink-500 to-pink-600",
+      bgColor: "bg-secondary/60",
     },
     {
       id: "bedding",
       name: "Bedding",
       icon: Bed,
-      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-accent/40",
     },
   ];
 
@@ -67,17 +67,14 @@ const CategorySelection = () => {
             return (
               <Card
                 key={category.id}
-                className="p-0 overflow-hidden cursor-pointer hover:shadow-elevated transition-all hover:scale-[1.02] border-2 border-transparent hover:border-primary"
+                className="p-6 cursor-pointer hover:shadow-soft transition-all duration-300 hover:-translate-y-1 border border-border/50 hover:border-primary/30"
                 onClick={() => handleCategoryClick(category.id)}
               >
-                <div className="aspect-square relative">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-10`} />
-                  <div className="relative h-full flex flex-col items-center justify-center gap-3 p-4">
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-lg`}>
-                      <Icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-center">{category.name}</h3>
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className={`w-20 h-20 rounded-3xl ${category.bgColor} flex items-center justify-center`}>
+                    <Icon className="w-10 h-10 text-foreground/80" />
                   </div>
+                  <h3 className="font-semibold text-center text-base">{category.name}</h3>
                 </div>
               </Card>
             );
