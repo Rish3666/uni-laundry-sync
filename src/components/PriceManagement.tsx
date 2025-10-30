@@ -14,11 +14,50 @@ import {
 } from "@/components/ui/table";
 import { Edit2, Save, X, Plus } from "lucide-react";
 
+// Import item icons
+import bathTowelIcon from "@/assets/icons/bath-towel.png";
+import blanketDoubleIcon from "@/assets/icons/blanket-double.png";
+import blanketSingleIcon from "@/assets/icons/blanket-single.png";
+import blouseIcon from "@/assets/icons/blouse.png";
+import handTowelIcon from "@/assets/icons/hand-towel.png";
+import hankyIcon from "@/assets/icons/hanky.png";
+import kameezIcon from "@/assets/icons/kameez.png";
+import kurtaIcon from "@/assets/icons/kurta.png";
+import lungiIcon from "@/assets/icons/lungi.png";
+import pillowIcon from "@/assets/icons/pillow.png";
+import pyjamaIcon from "@/assets/icons/pyjama.png";
+import quiltDoubleIcon from "@/assets/icons/quilt-double.png";
+import quiltSingleIcon from "@/assets/icons/quilt-single.png";
+import salwarIcon from "@/assets/icons/salwar.png";
+
+// Icon mapping
+const iconMap: Record<string, string> = {
+  "bath-towel.png": bathTowelIcon,
+  "blanket-double.png": blanketDoubleIcon,
+  "blanket-single.png": blanketSingleIcon,
+  "blouse.png": blouseIcon,
+  "hand-towel.png": handTowelIcon,
+  "hanky.png": hankyIcon,
+  "kameez.png": kameezIcon,
+  "kurta.png": kurtaIcon,
+  "lungi.png": lungiIcon,
+  "pillow.png": pillowIcon,
+  "pyjama.png": pyjamaIcon,
+  "quilt-double.png": quiltDoubleIcon,
+  "quilt-single.png": quiltSingleIcon,
+  "salwar.png": salwarIcon,
+};
+
 interface Item {
   id: string;
   name: string;
   emoji: string;
 }
+
+const getIconUrl = (emojiPath: string): string => {
+  const fileName = emojiPath.split('/').pop() || '';
+  return iconMap[fileName] || emojiPath;
+};
 
 interface ServiceType {
   id: string;
@@ -197,7 +236,7 @@ export const PriceManagement = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
                           <img 
-                            src={item.emoji} 
+                            src={getIconUrl(item.emoji)} 
                             alt={item.name}
                             className="w-8 h-8 object-contain"
                           />
