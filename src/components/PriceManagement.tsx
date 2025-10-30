@@ -12,10 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit2, Save, X } from "lucide-react";
+import { Edit2, Save, X, Plus } from "lucide-react";
+
+interface Item {
+  id: string;
+  name: string;
+  emoji: string;
+}
+
+interface ServiceType {
+  id: string;
+  name: string;
+}
 
 interface ItemPrice {
-  id: string;
+  id?: string;
   item_id: string;
   service_type_id: string;
   price: number;
@@ -24,67 +35,77 @@ interface ItemPrice {
 }
 
 interface PriceEditState {
-  id: string;
+  item_id: string;
+  service_type_id: string;
   price: string;
+  isNew?: boolean;
 }
 
 export const PriceManagement = () => {
-  const [itemPrices, setItemPrices] = useState<ItemPrice[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
+  const [priceMap, setPriceMap] = useState<Map<string, ItemPrice>>(new Map());
   const [loading, setLoading] = useState(true);
   const [editingPrice, setEditingPrice] = useState<PriceEditState | null>(null);
 
   useEffect(() => {
-    fetchPrices();
+    fetchData();
   }, []);
 
-  const fetchPrices = async () => {
+  const fetchData = async () => {
     try {
-      // Fetch item prices with related item and service type names
-      const { data: prices, error: pricesError } = await supabase
-        .from("item_prices")
-        .select("*")
-        .order("item_id");
-
-      if (pricesError) throw pricesError;
-
       // Fetch items
-      const { data: items, error: itemsError } = await supabase
+      const { data: itemsData, error: itemsError } = await supabase
         .from("items")
-        .select("id, name");
+        .select("id, name, emoji")
+        .order("display_order");
 
       if (itemsError) throw itemsError;
 
       // Fetch service types
-      const { data: services, error: servicesError } = await supabase
+      const { data: servicesData, error: servicesError } = await supabase
         .from("service_types")
-        .select("id, name");
+        .select("id, name")
+        .order("display_order");
 
       if (servicesError) throw servicesError;
 
-      // Map prices with item and service names
-      const enrichedPrices = (prices || []).map(price => {
-        const item = items?.find(i => i.id === price.item_id);
-        const service = services?.find(s => s.id === price.service_type_id);
-        return {
-          ...price,
-          item_name: item?.name || "Unknown",
-          service_name: service?.name || "Unknown",
-        };
-      });
+      // Fetch all prices
+      const { data: pricesData, error: pricesError } = await supabase
+        .from("item_prices")
+        .select("*");
 
-      setItemPrices(enrichedPrices);
+      if (pricesError) throw pricesError;
+
+      setItems(itemsData || []);
+      setServiceTypes(servicesData || []);
+
+      // Create a map for quick price lookup
+      const pMap = new Map<string, ItemPrice>();
+      (pricesData || []).forEach(price => {
+        const key = `${price.item_id}-${price.service_type_id}`;
+        pMap.set(key, price);
+      });
+      setPriceMap(pMap);
     } catch (error) {
-      console.error("Error fetching prices:", error);
-      toast.error("Failed to load prices");
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
-  const startEdit = (price: ItemPrice) => {
+  const getPrice = (itemId: string, serviceTypeId: string): ItemPrice | null => {
+    const key = `${itemId}-${serviceTypeId}`;
+    return priceMap.get(key) || null;
+  };
+
+  const startEdit = (itemId: string, serviceTypeId: string, existingPrice?: number) => {
     setEditingPrice({
-      id: price.id,
-      price: price.price.toString(),
+      item_id: itemId,
+      service_type_id: serviceTypeId,
+      price: existingPrice?.toString() || "",
+      isNew: !existingPrice,
     });
   };
 
@@ -102,19 +123,36 @@ export const PriceManagement = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from("item_prices")
-        .update({ price: newPrice })
-        .eq("id", editingPrice.id);
+      const key = `${editingPrice.item_id}-${editingPrice.service_type_id}`;
+      const existingPrice = priceMap.get(key);
 
-      if (error) throw error;
+      if (existingPrice) {
+        // Update existing price
+        const { error } = await supabase
+          .from("item_prices")
+          .update({ price: newPrice })
+          .eq("id", existingPrice.id);
 
-      toast.success("Price updated successfully");
+        if (error) throw error;
+      } else {
+        // Insert new price
+        const { error } = await supabase
+          .from("item_prices")
+          .insert({
+            item_id: editingPrice.item_id,
+            service_type_id: editingPrice.service_type_id,
+            price: newPrice,
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success("Price saved successfully");
       setEditingPrice(null);
-      fetchPrices();
+      fetchData();
     } catch (error) {
-      console.error("Error updating price:", error);
-      toast.error("Failed to update price");
+      console.error("Error saving price:", error);
+      toast.error("Failed to save price");
     }
   };
 
@@ -132,65 +170,91 @@ export const PriceManagement = () => {
         <CardTitle>Price Management</CardTitle>
       </CardHeader>
       <CardContent>
-        {itemPrices.length === 0 ? (
+        {items.length === 0 || serviceTypes.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-2">No item prices found</p>
+            <p className="text-muted-foreground mb-2">No items or service types found</p>
             <p className="text-sm text-muted-foreground">
-              Items and prices need to be added to the database first
+              Please add items and service types to the database first
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Service Type</TableHead>
-                <TableHead>Price (₹)</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {itemPrices.map((price) => (
-                <TableRow key={price.id}>
-                  <TableCell className="font-medium">{price.item_name}</TableCell>
-                  <TableCell>{price.service_name}</TableCell>
-                  <TableCell>
-                    {editingPrice?.id === price.id ? (
-                      <Input
-                        type="number"
-                        value={editingPrice.price}
-                        onChange={(e) =>
-                          setEditingPrice({ ...editingPrice, price: e.target.value })
-                        }
-                        className="w-24"
-                        min="0"
-                        step="0.01"
-                      />
-                    ) : (
-                      `₹${price.price}`
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {editingPrice?.id === price.id ? (
-                      <div className="flex gap-2 justify-end">
-                        <Button size="sm" onClick={savePrice}>
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEdit}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={() => startEdit(price)}>
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                    )}
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Item</TableHead>
+                  {serviceTypes.map((service) => (
+                    <TableHead key={service.id} className="text-center min-w-[150px]">
+                      {service.name}
+                    </TableHead>
+                  ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{item.emoji}</span>
+                        <span>{item.name}</span>
+                      </div>
+                    </TableCell>
+                    {serviceTypes.map((service) => {
+                      const price = getPrice(item.id, service.id);
+                      const isEditing = editingPrice?.item_id === item.id && 
+                                       editingPrice?.service_type_id === service.id;
+                      
+                      return (
+                        <TableCell key={`${item.id}-${service.id}`} className="text-center">
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 justify-center">
+                              <Input
+                                type="number"
+                                value={editingPrice.price}
+                                onChange={(e) =>
+                                  setEditingPrice({ ...editingPrice, price: e.target.value })
+                                }
+                                className="w-24"
+                                min="0"
+                                step="1"
+                                placeholder="₹"
+                                autoFocus
+                              />
+                              <Button size="sm" onClick={savePrice} className="h-8 w-8 p-0">
+                                <Save className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEdit} className="h-8 w-8 p-0">
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant={price ? "outline" : "ghost"}
+                              onClick={() => startEdit(item.id, service.id, price?.price)}
+                              className="w-full"
+                            >
+                              {price ? (
+                                <>
+                                  <Edit2 className="h-3 w-3 mr-1" />
+                                  ₹{price.price}
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>
