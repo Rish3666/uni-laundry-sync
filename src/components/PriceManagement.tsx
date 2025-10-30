@@ -132,57 +132,66 @@ export const PriceManagement = () => {
         <CardTitle>Price Management</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Service Type</TableHead>
-              <TableHead>Price (₹)</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {itemPrices.map((price) => (
-              <TableRow key={price.id}>
-                <TableCell className="font-medium">{price.item_name}</TableCell>
-                <TableCell>{price.service_name}</TableCell>
-                <TableCell>
-                  {editingPrice?.id === price.id ? (
-                    <Input
-                      type="number"
-                      value={editingPrice.price}
-                      onChange={(e) =>
-                        setEditingPrice({ ...editingPrice, price: e.target.value })
-                      }
-                      className="w-24"
-                      min="0"
-                      step="0.01"
-                    />
-                  ) : (
-                    `₹${price.price}`
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  {editingPrice?.id === price.id ? (
-                    <div className="flex gap-2 justify-end">
-                      <Button size="sm" onClick={savePrice}>
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={cancelEdit}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => startEdit(price)}>
-                      <Edit2 className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  )}
-                </TableCell>
+        {itemPrices.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-2">No item prices found</p>
+            <p className="text-sm text-muted-foreground">
+              Items and prices need to be added to the database first
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Service Type</TableHead>
+                <TableHead>Price (₹)</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {itemPrices.map((price) => (
+                <TableRow key={price.id}>
+                  <TableCell className="font-medium">{price.item_name}</TableCell>
+                  <TableCell>{price.service_name}</TableCell>
+                  <TableCell>
+                    {editingPrice?.id === price.id ? (
+                      <Input
+                        type="number"
+                        value={editingPrice.price}
+                        onChange={(e) =>
+                          setEditingPrice({ ...editingPrice, price: e.target.value })
+                        }
+                        className="w-24"
+                        min="0"
+                        step="0.01"
+                      />
+                    ) : (
+                      `₹${price.price}`
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {editingPrice?.id === price.id ? (
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" onClick={savePrice}>
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={cancelEdit}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => startEdit(price)}>
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );
