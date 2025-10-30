@@ -39,7 +39,13 @@ const AdminQRScanner = () => {
 
     const onScanSuccess = async (decodedText: string) => {
       setLoading(true);
-      scanner.clear().catch(console.error);
+      // Stop camera before clearing
+      try {
+        await scanner.pause(true);
+        await scanner.clear();
+      } catch (error) {
+        console.error("Error stopping scanner:", error);
+      }
 
       try {
         // Check if this is a pickup token (starts with PKP-)
@@ -118,7 +124,12 @@ const AdminQRScanner = () => {
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
+        try {
+          scannerRef.current.pause(true);
+          scannerRef.current.clear();
+        } catch (error) {
+          console.error("Error cleaning up scanner:", error);
+        }
         scannerRef.current = null;
       }
     };
