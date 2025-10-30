@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Package, 
   Clock, 
@@ -14,9 +15,11 @@ import {
   ChevronRight,
   LogOut,
   QrCode,
+  Receipt,
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { PriceManagement } from "@/components/PriceManagement";
 
 interface Order {
   id: string;
@@ -296,17 +299,29 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Batches List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Batches</h2>
-          
-          {filteredBatches.length === 0 ? (
-            <Card className="p-12 text-center text-muted-foreground">
-              <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No batches found</p>
-            </Card>
-          ) : (
-            filteredBatches.map((batch) => (
+        {/* Tabs for Orders and Price Management */}
+        <Tabs defaultValue="orders" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="orders">
+              <Package className="w-4 h-4 mr-2" />
+              Orders & Batches
+            </TabsTrigger>
+            <TabsTrigger value="prices">
+              <Receipt className="w-4 h-4 mr-2" />
+              Manage Prices
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders" className="space-y-4 mt-6">
+            <h2 className="text-xl font-semibold">Batches</h2>
+            
+            {filteredBatches.length === 0 ? (
+              <Card className="p-12 text-center text-muted-foreground">
+                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No batches found</p>
+              </Card>
+            ) : (
+              filteredBatches.map((batch) => (
               <Card key={batch.batch_number} className="shadow-card overflow-hidden">
                 <CardHeader 
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -416,9 +431,14 @@ const AdminDashboard = () => {
                   </CardContent>
                 )}
               </Card>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="prices" className="mt-6">
+            <PriceManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
