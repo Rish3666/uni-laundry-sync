@@ -194,8 +194,14 @@ export const PriceManagement = () => {
                 {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <span>{item.emoji}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                          <img 
+                            src={item.emoji} 
+                            alt={item.name}
+                            className="w-8 h-8 object-contain"
+                          />
+                        </div>
                         <span>{item.name}</span>
                       </div>
                     </TableCell>
