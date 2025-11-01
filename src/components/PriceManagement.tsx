@@ -281,8 +281,8 @@ export const PriceManagement = () => {
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="h-3 w-3 mr-1" />
-                                  Add
+                                  <Edit2 className="h-3 w-3 mr-1" />
+                                  Edit Price
                                 </>
                               )}
                             </Button>
