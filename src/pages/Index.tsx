@@ -368,7 +368,7 @@ const Index = () => {
                 return (
                   <Card key={item.id} className="p-4 flex items-center justify-between hover:shadow-card transition-all">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center overflow-hidden">
                         {typeof getItemIcon(item.id) === 'string' && getItemIcon(item.id).startsWith('/') || typeof getItemIcon(item.id) !== 'string' ? (
                           <img src={getItemIcon(item.id)} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
