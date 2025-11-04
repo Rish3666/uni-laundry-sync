@@ -437,7 +437,7 @@ const Index = () => {
                 <h3 className="font-semibold">Order Items</h3>
               </div>
               {cart.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-secondary/50 rounded-lg">
+                <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-secondary/50 dark:bg-order-item-bg rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">₹{item.price} × {item.quantity} = ₹{item.price * item.quantity}</p>

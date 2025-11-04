@@ -59,6 +59,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "order-item-bg": "hsl(var(--order-item-bg) / <alpha-value>)",
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
