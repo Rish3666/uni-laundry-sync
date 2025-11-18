@@ -11,30 +11,39 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { profileUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { queryClient } from "@/lib/queryClient";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: user } = useAuth();
+  const { data: profileData, isLoading: loading } = useProfile(user?.id);
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ student_name: "", mobile_no: "", student_id: "", room_number: "", gender: "" });
+  const [formData, setFormData] = useState({ 
+    student_name: "", 
+    mobile_no: "", 
+    student_id: "", 
+    room_number: "", 
+    gender: "" 
+  });
 
-  useEffect(() => { fetchProfile(); }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/auth"); return; }
-      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
-      setProfile(data);
-      if (data) setFormData({ student_name: data.student_name || "", mobile_no: data.mobile_no || "", student_id: data.student_id || "", room_number: data.room_number || "", gender: data.gender || "" });
-    } catch (error) {
-      toast.error("Failed to load profile");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+      return;
     }
-  };
+    if (profileData) {
+      setFormData({
+        student_name: profileData.student_name || "",
+        mobile_no: profileData.mobile_no || "",
+        student_id: profileData.student_id || "",
+        room_number: profileData.room_number || "",
+        gender: profileData.gender || ""
+      });
+    }
+  }, [user, profileData, navigate]);
 
   const handleUpdateProfile = async () => {
     try {
@@ -47,7 +56,8 @@ const Profile = () => {
       if (error) throw error;
       toast.success("Profile updated");
       setEditing(false);
-      fetchProfile();
+      // Invalidate profile query to refetch
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -70,7 +80,7 @@ const Profile = () => {
         ctx?.drawImage(img, 0, 0);
         const url = canvas.toDataURL("image/png");
         const link = document.createElement("a");
-        link.download = `smartwash-${profile.customer_number}.png`;
+        link.download = `smartwash-${profileData?.customer_number}.png`;
         link.href = url;
         link.click();
       };
@@ -96,15 +106,15 @@ const Profile = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {!isAdmin && profile?.qr_code && (
+        {!isAdmin && profileData?.qr_code && (
           <div className="bg-card rounded-lg p-6 shadow-card text-center space-y-4">
             <div className="flex items-center justify-center gap-2 text-primary mb-2">
               <QrCode className="w-5 h-5" /><h2 className="text-lg font-semibold">Your QR Code</h2>
             </div>
             <div className="inline-block p-4 bg-white rounded-lg">
-              <QRCodeSVG id="qr-code" value={profile.qr_code} size={200} level="H" includeMargin />
+              <QRCodeSVG id="qr-code" value={profileData.qr_code} size={200} level="H" includeMargin />
             </div>
-            <p className="font-mono font-semibold text-primary">{profile.customer_number}</p>
+            <p className="font-mono font-semibold text-primary">{profileData.customer_number}</p>
             <Button onClick={downloadQR} variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />Download</Button>
           </div>
         )}
@@ -139,12 +149,12 @@ const Profile = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Name</span><span className="font-medium">{profile?.student_name || "Not set"}</span></div>
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Student ID</span><span className="font-medium">{profile?.student_id || "Not set"}</span></div>
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Email</span><span className="font-medium">{profile?.email}</span></div>
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profile?.mobile_no || "Not set"}</span></div>
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Room Number</span><span className="font-medium">{profile?.room_number || "Not set"}</span></div>
-              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Gender</span><span className="font-medium">{profile?.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Name</span><span className="font-medium">{profileData?.student_name || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Student ID</span><span className="font-medium">{profileData?.student_id || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Email</span><span className="font-medium">{profileData?.email}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Mobile</span><span className="font-medium">{profileData?.mobile_no || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Room Number</span><span className="font-medium">{profileData?.room_number || "Not set"}</span></div>
+              <div className="flex justify-between py-2 border-b"><span className="text-muted-foreground">Gender</span><span className="font-medium">{profileData?.gender ? profileData.gender.charAt(0).toUpperCase() + profileData.gender.slice(1) : "Not set"}</span></div>
             </div>
           )}
         </div>
