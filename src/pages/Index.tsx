@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { orderFormSchema } from "@/lib/validation";
 import { isPublicHoliday, getHolidayName } from "@/lib/holidays";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 interface CartItem {
   id: string;
@@ -36,12 +38,12 @@ type Step = "category" | "items" | "checkout";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { data: user } = useAuth();
+  const { data: profileData } = useProfile(user?.id);
   const [step, setStep] = useState<Step>("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
     studentId: "",
     studentName: "",
@@ -49,36 +51,18 @@ const Index = () => {
   });
 
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-      setUserId(user.id);
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profileData) {
-        setProfile(profileData);
-        setFormData({
-          studentId: profileData.student_id || "",
-          studentName: profileData.student_name || "",
-          mobileNo: profileData.mobile_no || "",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
+    if (!user) {
+      navigate("/auth");
+      return;
     }
-  };
+    if (profileData) {
+      setFormData({
+        studentId: profileData.student_id || "",
+        studentName: profileData.student_name || "",
+        mobileNo: profileData.mobile_no || "",
+      });
+    }
+  }, [user, profileData, navigate]);
 
   const categories = [
     { id: "mens-wear", name: "Men's Wear", icon: Shirt, color: "from-blue-500 to-blue-600" },
@@ -172,7 +156,7 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!userId) {
+    if (!user?.id) {
       toast.error("Please log in to submit an order");
       navigate("/auth");
       return;
@@ -208,19 +192,19 @@ const Index = () => {
       return;
     }
 
-    if (!profile?.gender) {
+    if (!profileData?.gender) {
       toast.error("Please update your gender in profile settings");
       navigate("/profile");
       return;
     }
 
-    if (profile.gender === "male") {
+    if (profileData.gender === "male") {
       // Boys: Monday (1), Wednesday (3), Friday (5)
       if (![1, 3, 5].includes(today)) {
         toast.error("Boys can only submit laundry on Monday, Wednesday, and Friday");
         return;
       }
-    } else if (profile.gender === "female") {
+    } else if (profileData.gender === "female") {
       // Girls: Tuesday (2), Thursday (4), Saturday (6)
       if (![2, 4, 6].includes(today)) {
         toast.error("Girls can only submit laundry on Tuesday, Thursday, and Saturday");

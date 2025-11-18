@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isPublicHoliday, getHolidayName } from "@/lib/holidays";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 interface CartItem {
   id: string;
@@ -24,14 +26,18 @@ type PaymentMethod = "cash" | "card" | "upi";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { data: user } = useAuth();
+  const { data: profileData, isLoading: profileLoading } = useProfile(user?.id);
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
-  const [profile, setProfile] = useState<any>(null);
   const [orderCreated, setOrderCreated] = useState<any>(null);
 
   useEffect(() => {
-    fetchProfile();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       setCart(JSON.parse(savedCart));
@@ -39,19 +45,7 @@ const Checkout = () => {
       toast.error("Your cart is empty");
       navigate("/");
     }
-  }, []); // Only run once on mount
-
-  const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setProfile(data);
-    }
-  };
+  }, [user, orderCreated, navigate]);
 
   const getTotalAmount = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -82,7 +76,7 @@ const Checkout = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user || !profile) {
+      if (!user || !profileData) {
         toast.error("Please log in to place an order");
         setLoading(false);
         return;
@@ -105,11 +99,11 @@ const Checkout = () => {
       const pendingOrder = {
         user_id: user.id,
         order_number: orderNumber,
-        customer_name: profile.student_name,
-        customer_phone: profile.mobile_no,
-        customer_email: profile.email,
-        student_id: profile.student_id,
-        room_number: profile.room_number,
+        customer_name: profileData.student_name,
+        customer_phone: profileData.mobile_no,
+        customer_email: profileData.email,
+        student_id: profileData.student_id,
+        room_number: profileData.room_number,
         total_amount: totalAmount,
         payment_method: paymentMethod,
         payment_status: paymentMethod === "cash" ? "pending" : "paid",
@@ -146,7 +140,7 @@ const Checkout = () => {
     { id: "upi", name: "UPI", icon: Smartphone, emoji: "📱" },
   ];
 
-  if (!profile) {
+  if (profileLoading || !profileData) {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
   }
 
@@ -229,26 +223,26 @@ const Checkout = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Student Name</span>
-              <span className="font-medium">{profile?.student_name || "Not set"}</span>
+              <span className="font-medium">{profileData?.student_name || "Not set"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Student ID</span>
-              <span className="font-medium">{profile?.student_id || "Not set"}</span>
+              <span className="font-medium">{profileData?.student_id || "Not set"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Mobile Number</span>
-              <span className="font-medium">{profile?.mobile_no || "Not set"}</span>
+              <span className="font-medium">{profileData?.mobile_no || "Not set"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Room Number</span>
-              <span className="font-medium">{profile?.room_number || "Not set"}</span>
+              <span className="font-medium">{profileData?.room_number || "Not set"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Email</span>
-              <span className="font-medium">{profile?.email || "Not set"}</span>
+              <span className="font-medium">{profileData?.email || "Not set"}</span>
             </div>
           </div>
-          {(!profile?.student_name || !profile?.mobile_no) && (
+          {(!profileData?.student_name || !profileData?.mobile_no) && (
             <div className="mt-3 p-3 bg-destructive/10 rounded-lg">
               <p className="text-sm text-destructive">Please update your profile with complete information before placing an order.</p>
               <Button 
