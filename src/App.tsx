@@ -10,6 +10,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
+import Subscription from "./pages/Subscription";
 import Auth from "./pages/Auth";
 import AdminLogin from "./pages/AdminLogin";
 import QRScanner from "./pages/QRScanner";
@@ -40,6 +41,7 @@ const App = () => {
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                 <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/admin/scan" element={<ProtectedRoute><AdminQRScanner /></ProtectedRoute>} />
                 <Route path="/admin/scan-delivery" element={<ProtectedRoute><AdminReturnScanner /></ProtectedRoute>} />

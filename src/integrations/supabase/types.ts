@@ -364,6 +364,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          base_price: number
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          duration_days: number
+          id: string
+          is_active: boolean | null
+          max_items_per_day: number
+          name: string
+          total_items: number
+          updated_at: string | null
+        }
+        Insert: {
+          base_price: number
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          duration_days: number
+          id?: string
+          is_active?: boolean | null
+          max_items_per_day: number
+          name: string
+          total_items: number
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          duration_days?: number
+          id?: string
+          is_active?: boolean | null
+          max_items_per_day?: number
+          name?: string
+          total_items?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -384,6 +426,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          base_amount: number
+          created_at: string | null
+          end_date: string
+          gst_amount: number
+          id: string
+          items_used_today: number | null
+          payment_status: string | null
+          plan_id: string
+          start_date: string
+          status: string
+          total_amount: number
+          total_items_used: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          base_amount: number
+          created_at?: string | null
+          end_date: string
+          gst_amount: number
+          id?: string
+          items_used_today?: number | null
+          payment_status?: string | null
+          plan_id: string
+          start_date: string
+          status?: string
+          total_amount: number
+          total_items_used?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          base_amount?: number
+          created_at?: string | null
+          end_date?: string
+          gst_amount?: number
+          id?: string
+          items_used_today?: number | null
+          payment_status?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          total_amount?: number
+          total_items_used?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {

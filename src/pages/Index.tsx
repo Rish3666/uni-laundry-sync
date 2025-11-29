@@ -268,10 +268,18 @@ const Index = () => {
     <div className="min-h-[calc(100vh-8rem)] p-4 pb-24 animate-fade-in">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center">
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             SpinSync
           </h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/subscription")}
+            className="text-sm"
+          >
+            Subscription
+          </Button>
         </div>
 
         {/* Progress Indicator */}
