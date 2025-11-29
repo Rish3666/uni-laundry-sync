@@ -5,14 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Phone } from "lucide-react";
+import { Phone, Calendar, CheckCircle2 } from "lucide-react";
 
 interface SubscriptionPlan {
   id: string;
@@ -24,18 +18,35 @@ interface SubscriptionPlan {
   description: string;
 }
 
+interface UserSubscription {
+  id: string;
+  plan_id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  items_used_today: number;
+  total_items_used: number;
+  subscription_plans: {
+    name: string;
+    max_items_per_day: number;
+    total_items: number;
+  };
+}
+
 const Subscription = () => {
   const navigate = useNavigate();
   const { data: user } = useAuth();
   const { data: profile } = useProfile(user?.id);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [activeSubscription, setActiveSubscription] = useState<UserSubscription | null>(null);
 
   useEffect(() => {
     fetchPlans();
-  }, []);
+    if (user) {
+      fetchActiveSubscription();
+    }
+  }, [user]);
 
   const fetchPlans = async () => {
     const { data, error } = await supabase
@@ -53,49 +64,43 @@ const Subscription = () => {
     setLoading(false);
   };
 
-  const calculateGST = (basePrice: number) => {
-    return basePrice * 0.18;
-  };
+  const fetchActiveSubscription = async () => {
+    if (!user) return;
 
-  const calculateTotal = (basePrice: number) => {
-    return basePrice + calculateGST(basePrice);
+    const { data, error } = await supabase
+      .from("user_subscriptions")
+      .select(`
+        *,
+        subscription_plans (
+          name,
+          max_items_per_day,
+          total_items
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .gte("end_date", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+    } else {
+      setActiveSubscription(data);
+    }
   };
 
   const handleSubscribe = (plan: SubscriptionPlan) => {
-    setSelectedPlan(plan);
-    setShowConfirmDialog(true);
+    navigate(`/subscription/payment?planId=${plan.id}`);
   };
 
-  const handlePurchase = async () => {
-    if (!selectedPlan || !user) return;
-
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + selectedPlan.duration_days);
-
-    const gstAmount = calculateGST(selectedPlan.base_price);
-    const totalAmount = calculateTotal(selectedPlan.base_price);
-
-    const { error } = await supabase.from("user_subscriptions").insert({
-      user_id: user.id,
-      plan_id: selectedPlan.id,
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
-      base_amount: selectedPlan.base_price,
-      gst_amount: gstAmount,
-      total_amount: totalAmount,
-      status: "active",
-      payment_status: "completed",
-    });
-
-    if (error) {
-      toast.error("Failed to purchase subscription");
-      console.error(error);
-    } else {
-      toast.success("Subscription purchased successfully!");
-      setShowConfirmDialog(false);
-      navigate("/");
-    }
+  const calculateDaysRemaining = (endDate: string) => {
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
   if (loading) {
@@ -143,77 +148,89 @@ const Subscription = () => {
 
       {/* Content */}
       <div className="p-4 space-y-6">
-        <h2 className="text-2xl font-semibold text-center text-foreground">
-          Choose subscription plan
-        </h2>
+        {activeSubscription ? (
+          <>
+            {/* Active Subscription Card */}
+            <Card className="p-6 space-y-4 bg-primary/5 border-primary">
+              <div className="flex items-center gap-2 text-primary">
+                <CheckCircle2 className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Active Subscription</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Plan</span>
+                  <span className="font-semibold text-foreground">
+                    {activeSubscription.subscription_plans.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Days Remaining
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {calculateDaysRemaining(activeSubscription.end_date)} days
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Items Used Today</span>
+                  <span className="font-medium text-foreground">
+                    {activeSubscription.items_used_today} / {activeSubscription.subscription_plans.max_items_per_day}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Items Used</span>
+                  <span className="font-medium text-foreground">
+                    {activeSubscription.total_items_used} / {activeSubscription.subscription_plans.total_items}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-border">
+                  <span className="text-muted-foreground">Valid Until</span>
+                  <span className="font-medium text-foreground">
+                    {new Date(activeSubscription.end_date).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+            </Card>
 
-        {plans.map((plan) => (
-          <Card key={plan.id} className="p-6 space-y-4 bg-card border-border">
-            <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>
-                {plan.duration_days} days, with maximum of {plan.max_items_per_day} items per day
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                You can purchase a new subscription after this one expires
               </p>
-              <p>Total {plan.total_items} items per subscription</p>
-              <p>{plan.description}</p>
             </div>
-            <Button
-              onClick={() => handleSubscribe(plan)}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              size="lg"
-            >
-              Subscribe plan for ₹{plan.base_price.toLocaleString()}
-            </Button>
-          </Card>
-        ))}
-      </div>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-center text-foreground">
+              Choose subscription plan
+            </h2>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              {selectedPlan?.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">
-                <span>₹</span>
-                <span>Net Price</span>
-              </span>
-              <span className="text-xl font-semibold">
-                ₹{selectedPlan?.base_price.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">
-                <span>%</span>
-                <span>GST 18%</span>
-              </span>
-              <span className="text-xl font-semibold">
-                ₹{selectedPlan ? calculateGST(selectedPlan.base_price).toFixed(1) : 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">
-                <span>₹</span>
-                <span>Total Payable Amount</span>
-              </span>
-              <span className="text-xl font-semibold">
-                ₹{selectedPlan ? calculateTotal(selectedPlan.base_price).toLocaleString() : 0}
-              </span>
-            </div>
-            <Button
-              onClick={handlePurchase}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              size="lg"
-            >
-              Purchase Subscription
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            {plans.map((plan) => (
+              <Card key={plan.id} className="p-6 space-y-4 bg-card border-border">
+                <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>
+                    {plan.duration_days} days, with maximum of {plan.max_items_per_day} items per day
+                  </p>
+                  <p>Total {plan.total_items} items per subscription</p>
+                  <p>{plan.description}</p>
+                </div>
+                <Button
+                  onClick={() => handleSubscribe(plan)}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  size="lg"
+                >
+                  Subscribe plan for ₹{plan.base_price.toLocaleString()}
+                </Button>
+              </Card>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 };
