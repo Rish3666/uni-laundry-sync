@@ -171,14 +171,16 @@ const Profile = () => {
         
         <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
           <h2 className="text-lg font-semibold">Contact Support</h2>
-          <Button 
-            onClick={() => window.open("https://wa.me/919876543210", "_blank")}
-            className="w-full bg-green-500 hover:bg-green-600 text-white"
-            size="lg"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Message Admin on WhatsApp
-          </Button>
+          <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="block">
+            <Button 
+              className="w-full bg-green-500 hover:bg-green-600 text-white"
+              size="lg"
+              type="button"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Message Admin on WhatsApp
+            </Button>
+          </a>
         </div>
 
         <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
