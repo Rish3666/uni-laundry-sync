@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, QrCode, Download } from "lucide-react";
+import { LogOut, QrCode, Download, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -168,6 +168,19 @@ const Profile = () => {
         </div>
 
         {isAdmin && <Button onClick={() => navigate("/admin")} className="w-full">Admin Dashboard</Button>}
+        
+        <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
+          <h2 className="text-lg font-semibold">Contact Support</h2>
+          <Button 
+            onClick={() => window.open("https://wa.me/919876543210", "_blank")}
+            className="w-full bg-green-500 hover:bg-green-600 text-white"
+            size="lg"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Message Admin on WhatsApp
+          </Button>
+        </div>
+
         <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
       </div>
     </div>

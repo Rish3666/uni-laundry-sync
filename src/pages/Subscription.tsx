@@ -6,7 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Phone, Calendar, CheckCircle2 } from "lucide-react";
+import { Calendar, CheckCircle2 } from "lucide-react";
 
 interface SubscriptionPlan {
   id: string;
@@ -114,7 +114,7 @@ const Subscription = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-card border-b border-border p-4 flex items-center justify-between">
+      <div className="bg-card border-b border-border p-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-2xl">👤</span>
@@ -123,14 +123,6 @@ const Subscription = () => {
             {profile?.student_name || "User"}
           </h1>
         </div>
-        <a
-          href={`https://wa.me/${profile?.mobile_no || ""}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"
-        >
-          <Phone className="w-6 h-6 text-white" />
-        </a>
       </div>
 
       {/* Tabs */}
