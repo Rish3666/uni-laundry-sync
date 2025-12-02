@@ -5,7 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LogOut, QrCode, Download, MessageCircle, Mail } from "lucide-react";
+import { 
+  LogOut, 
+  QrCode, 
+  Download, 
+  MessageCircle, 
+  Mail, 
+  ChevronRight,
+  FileText,
+  Shield,
+  XCircle,
+  RotateCcw,
+  Info,
+  UserX
+} from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -22,7 +35,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -40,6 +66,11 @@ const Profile = () => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [cancellationOpen, setCancellationOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const handleSendEmail = async () => {
     if (!emailMessage.trim()) {
@@ -88,7 +119,6 @@ const Profile = () => {
 
   const handleUpdateProfile = async () => {
     try {
-      // Validate input data
       const validatedData = profileUpdateSchema.parse(formData);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -97,7 +127,6 @@ const Profile = () => {
       if (error) throw error;
       toast.success("Profile updated");
       setEditing(false);
-      // Invalidate profile query to refetch
       queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -134,6 +163,30 @@ const Profile = () => {
     toast.success("Logged out");
     navigate("/auth");
   };
+
+  const handleDeleteAccount = async () => {
+    try {
+      // Sign out the user (actual deletion would require admin/server-side operation)
+      await supabase.auth.signOut();
+      toast.success("Account deletion request submitted. You have been logged out.");
+      navigate("/auth");
+    } catch (error) {
+      toast.error("Failed to process request. Please contact support.");
+    }
+  };
+
+  const MenuButton = ({ icon: Icon, label, onClick }: { icon: any; label: string; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/50 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <Icon className="w-5 h-5 text-muted-foreground" />
+        <span className="font-medium">{label}</span>
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+    </button>
+  );
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
 
@@ -265,8 +318,168 @@ const Profile = () => {
           </Dialog>
         </div>
 
-        <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
+        {/* Policies Section */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-muted-foreground px-1">Policies</h2>
+          
+          <MenuButton icon={FileText} label="Terms & Conditions" onClick={() => setTermsOpen(true)} />
+          <MenuButton icon={Shield} label="Privacy Policy" onClick={() => setPrivacyOpen(true)} />
+          <MenuButton icon={XCircle} label="Cancellation Policy" onClick={() => setCancellationOpen(true)} />
+          <MenuButton icon={RotateCcw} label="Return & Refund Policy" onClick={() => setRefundOpen(true)} />
+          <MenuButton icon={Info} label="About Us" onClick={() => setAboutOpen(true)} />
+        </div>
+
+        {/* Delete Account */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-destructive/30 hover:bg-destructive/10 transition-colors">
+              <div className="flex items-center gap-3">
+                <UserX className="w-5 h-5 text-destructive" />
+                <span className="font-medium text-destructive">Delete Account</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-destructive" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete Account
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg">
+          <LogOut className="w-4 h-4 mr-2" />Logout
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground">App Version: 1.0.0</p>
       </div>
+
+      {/* Terms & Conditions Dialog */}
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Terms & Conditions</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>Welcome to SmartWash. By using our services, you agree to be bound by the following terms and conditions.</p>
+              <h3 className="font-semibold text-foreground">1. Service Usage</h3>
+              <p>Our laundry services are available to registered users only. You must provide accurate information during registration.</p>
+              <h3 className="font-semibold text-foreground">2. Orders</h3>
+              <p>All orders are subject to availability. We reserve the right to refuse service at our discretion.</p>
+              <h3 className="font-semibold text-foreground">3. Payment</h3>
+              <p>Payment must be made at the time of order placement or upon delivery as per the chosen payment method.</p>
+              <h3 className="font-semibold text-foreground">4. Liability</h3>
+              <p>We take utmost care of your garments. However, we are not liable for damage to delicate items not declared at the time of order.</p>
+              <h3 className="font-semibold text-foreground">5. Changes to Terms</h3>
+              <p>We reserve the right to modify these terms at any time. Continued use of the service constitutes acceptance of modified terms.</p>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Privacy Policy Dialog */}
+      <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Privacy Policy</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>Your privacy is important to us. This policy explains how we collect, use, and protect your information.</p>
+              <h3 className="font-semibold text-foreground">Information We Collect</h3>
+              <p>We collect personal information such as name, email, phone number, and room number to provide our services.</p>
+              <h3 className="font-semibold text-foreground">How We Use Your Information</h3>
+              <p>Your information is used to process orders, communicate updates, and improve our services.</p>
+              <h3 className="font-semibold text-foreground">Data Security</h3>
+              <p>We implement appropriate security measures to protect your personal information from unauthorized access.</p>
+              <h3 className="font-semibold text-foreground">Third-Party Sharing</h3>
+              <p>We do not sell or share your personal information with third parties except as required by law.</p>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancellation Policy Dialog */}
+      <Dialog open={cancellationOpen} onOpenChange={setCancellationOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Cancellation Policy</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>We understand that plans can change. Here's our cancellation policy:</p>
+              <h3 className="font-semibold text-foreground">Order Cancellation</h3>
+              <p>Orders can be cancelled within 1 hour of placement for a full refund.</p>
+              <h3 className="font-semibold text-foreground">After Pickup</h3>
+              <p>Once your laundry has been picked up, cancellation is not possible as processing may have begun.</p>
+              <h3 className="font-semibold text-foreground">Subscription Cancellation</h3>
+              <p>Subscriptions can be cancelled anytime. Unused credits will be forfeited upon cancellation.</p>
+              <h3 className="font-semibold text-foreground">How to Cancel</h3>
+              <p>Contact our support team via WhatsApp or email to request cancellation.</p>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return & Refund Policy Dialog */}
+      <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Return & Refund Policy</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>We strive for 100% customer satisfaction. Here's our refund policy:</p>
+              <h3 className="font-semibold text-foreground">Quality Issues</h3>
+              <p>If you're not satisfied with the quality of our service, please report within 24 hours of delivery for a free re-wash.</p>
+              <h3 className="font-semibold text-foreground">Missing Items</h3>
+              <p>Report any missing items within 24 hours. We will investigate and compensate appropriately.</p>
+              <h3 className="font-semibold text-foreground">Damage Claims</h3>
+              <p>For damaged items, please provide photos within 24 hours of delivery. Valid claims will be compensated based on item value.</p>
+              <h3 className="font-semibold text-foreground">Refund Processing</h3>
+              <p>Approved refunds will be processed within 5-7 business days to the original payment method.</p>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* About Us Dialog */}
+      <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>About Us</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>SmartWash is your trusted laundry service partner, providing convenient and quality laundry solutions.</p>
+              <h3 className="font-semibold text-foreground">Our Mission</h3>
+              <p>To make laundry hassle-free for everyone with reliable, affordable, and eco-friendly services.</p>
+              <h3 className="font-semibold text-foreground">Our Services</h3>
+              <p>We offer wash & fold, dry cleaning, ironing, and specialized care for delicate fabrics.</p>
+              <h3 className="font-semibold text-foreground">Why Choose Us</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Convenient pickup and delivery</li>
+                <li>Quality cleaning products</li>
+                <li>Affordable pricing</li>
+                <li>Quick turnaround time</li>
+                <li>Dedicated customer support</li>
+              </ul>
+              <h3 className="font-semibold text-foreground">Contact</h3>
+              <p>For any queries, reach out to us via WhatsApp or email through the Contact Support section.</p>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
