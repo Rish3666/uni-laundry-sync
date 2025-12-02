@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, QrCode, Download, MessageCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { LogOut, QrCode, Download, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -14,6 +15,14 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { queryClient } from "@/lib/queryClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -28,6 +37,38 @@ const Profile = () => {
     room_number: "", 
     gender: "" 
   });
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleSendEmail = async () => {
+    if (!emailMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-admin-message", {
+        body: {
+          userName: profileData?.student_name || "Customer",
+          userEmail: profileData?.email || "",
+          message: emailMessage,
+        },
+      });
+
+      if (error) throw error;
+      
+      toast.success("Message sent to admin successfully");
+      setEmailMessage("");
+      setEmailDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -181,6 +222,47 @@ const Profile = () => {
               Message Admin on WhatsApp
             </Button>
           </a>
+          
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Email Admin
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Message Admin</DialogTitle>
+                <DialogDescription>
+                  Send a message to the admin via email. We'll get back to you as soon as possible.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="email-message">Your Message</Label>
+                  <Textarea
+                    id="email-message"
+                    placeholder="Type your message here..."
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={5}
+                    className="mt-2"
+                  />
+                </div>
+                <Button 
+                  onClick={handleSendEmail} 
+                  className="w-full"
+                  disabled={sendingEmail}
+                >
+                  {sendingEmail ? "Sending..." : "Send Message"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Button onClick={handleLogout} variant="destructive" className="w-full" size="lg"><LogOut className="w-4 h-4 mr-2" />Logout</Button>
