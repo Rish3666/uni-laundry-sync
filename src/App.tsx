@@ -24,6 +24,7 @@ import OrderConfirmScanner from "./pages/OrderConfirmScanner";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 const App = () => {
   return (
@@ -44,10 +45,10 @@ const App = () => {
                 <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
                 <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
                 <Route path="/subscription/payment" element={<ProtectedRoute><SubscriptionPayment /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/admin/scan" element={<ProtectedRoute><AdminQRScanner /></ProtectedRoute>} />
-                <Route path="/admin/scan-delivery" element={<ProtectedRoute><AdminReturnScanner /></ProtectedRoute>} />
-                <Route path="/admin/scan-pickup" element={<ProtectedRoute><AdminReceiveScanner /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+                <Route path="/admin/scan" element={<AdminProtectedRoute><AdminQRScanner /></AdminProtectedRoute>} />
+                <Route path="/admin/scan-delivery" element={<AdminProtectedRoute><AdminReturnScanner /></AdminProtectedRoute>} />
+                <Route path="/admin/scan-pickup" element={<AdminProtectedRoute><AdminReceiveScanner /></AdminProtectedRoute>} />
                 <Route path="/order-confirm-scanner" element={<ProtectedRoute><OrderConfirmScanner /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
