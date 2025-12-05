@@ -2,3 +2,6 @@ project_id = "pcsvbzksljavsyhxohki"
 
 [functions.redeem-pickup-token]
 verify_jwt = true
+
+[functions.notify-batch-complete]
+verify_jwt = true
