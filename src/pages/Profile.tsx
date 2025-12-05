@@ -347,41 +347,58 @@ const Profile = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Suggestions Section */}
-          <div className="border-t border-border pt-4 mt-4 space-y-3">
-            <h3 className="font-semibold">Suggestions</h3>
-            <p className="text-sm text-muted-foreground">Share your ideas to help us improve the app.</p>
-            <div>
-              <Label htmlFor="suggestion-text">Your Suggestion</Label>
-              <Textarea
-                id="suggestion-text"
-                placeholder="Tell us how we can improve..."
-                value={suggestionText}
-                onChange={(e) => setSuggestionText(e.target.value)}
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label htmlFor="suggestion-email">Email (optional)</Label>
-              <Input
-                id="suggestion-email"
-                type="email"
-                placeholder="your@email.com"
-                value={suggestionEmail}
-                onChange={(e) => setSuggestionEmail(e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-muted-foreground mt-1">So we can follow up with you</p>
-            </div>
-            <Button 
-              onClick={handleSubmitSuggestion} 
-              className="w-full"
-              disabled={submittingSuggestion}
-            >
-              {submittingSuggestion ? "Submitting..." : "Submit Suggestion"}
-            </Button>
-          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                className="w-full"
+                size="lg"
+                variant="outline"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Suggestions
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Suggestions</DialogTitle>
+                <DialogDescription>
+                  Share your ideas to help us improve the app.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="suggestion-text">Your Suggestion</Label>
+                  <Textarea
+                    id="suggestion-text"
+                    placeholder="Tell us how we can improve..."
+                    value={suggestionText}
+                    onChange={(e) => setSuggestionText(e.target.value)}
+                    rows={4}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="suggestion-email">Email (optional)</Label>
+                  <Input
+                    id="suggestion-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={suggestionEmail}
+                    onChange={(e) => setSuggestionEmail(e.target.value)}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">So we can follow up with you</p>
+                </div>
+                <Button 
+                  onClick={handleSubmitSuggestion} 
+                  className="w-full"
+                  disabled={submittingSuggestion}
+                >
+                  {submittingSuggestion ? "Submitting..." : "Submit Suggestion"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Policies Section */}
