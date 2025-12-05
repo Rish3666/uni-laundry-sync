@@ -15,6 +15,16 @@ interface AdminMessageRequest {
   message: string;
 }
 
+// Escape HTML to prevent XSS/injection attacks
+const escapeHtml = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,16 +33,21 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { userName, userEmail, message }: AdminMessageRequest = await req.json();
 
+    // Sanitize all user inputs before embedding in HTML
+    const safeUserName = escapeHtml(userName || '');
+    const safeUserEmail = escapeHtml(userEmail || '');
+    const safeMessage = escapeHtml(message || '');
+
     const emailResponse = await resend.emails.send({
       from: "SmartWash <onboarding@resend.dev>",
       to: ["admin@example.com"], // Replace with actual admin email
-      subject: `Message from ${userName}`,
+      subject: `Message from ${safeUserName}`,
       html: `
         <h2>New message from customer</h2>
-        <p><strong>From:</strong> ${userName}</p>
-        <p><strong>Email:</strong> ${userEmail}</p>
+        <p><strong>From:</strong> ${safeUserName}</p>
+        <p><strong>Email:</strong> ${safeUserEmail}</p>
         <p><strong>Message:</strong></p>
-        <p>${message}</p>
+        <p>${safeMessage}</p>
       `,
     });
 
