@@ -295,7 +295,7 @@ const Profile = () => {
         
         <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
           <h2 className="text-lg font-semibold">Contact Support</h2>
-          <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="block">
+          <a href="https://wa.me/919182199961" target="_blank" rel="noopener noreferrer" className="block">
             <Button 
               className="w-full bg-green-500 hover:bg-green-600 text-white"
               size="lg"
