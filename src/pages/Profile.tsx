@@ -71,6 +71,36 @@ const Profile = () => {
   const [cancellationOpen, setCancellationOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [suggestionText, setSuggestionText] = useState("");
+  const [suggestionEmail, setSuggestionEmail] = useState("");
+  const [submittingSuggestion, setSubmittingSuggestion] = useState(false);
+
+  const handleSubmitSuggestion = async () => {
+    if (!suggestionText.trim()) {
+      toast.error("Please enter your suggestion");
+      return;
+    }
+
+    setSubmittingSuggestion(true);
+    try {
+      const { error } = await supabase.from("suggestions").insert({
+        user_id: user?.id,
+        suggestion_text: suggestionText.trim(),
+        email: suggestionEmail.trim() || null,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Thank you for your suggestion!");
+      setSuggestionText("");
+      setSuggestionEmail("");
+    } catch (error: any) {
+      console.error("Error submitting suggestion:", error);
+      toast.error("Failed to submit suggestion. Please try again.");
+    } finally {
+      setSubmittingSuggestion(false);
+    }
+  };
 
   const handleSendEmail = async () => {
     if (!emailMessage.trim()) {
@@ -316,6 +346,42 @@ const Profile = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Suggestions Section */}
+          <div className="border-t border-border pt-4 mt-4 space-y-3">
+            <h3 className="font-semibold">Suggestions</h3>
+            <p className="text-sm text-muted-foreground">Share your ideas to help us improve the app.</p>
+            <div>
+              <Label htmlFor="suggestion-text">Your Suggestion</Label>
+              <Textarea
+                id="suggestion-text"
+                placeholder="Tell us how we can improve..."
+                value={suggestionText}
+                onChange={(e) => setSuggestionText(e.target.value)}
+                rows={4}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="suggestion-email">Email (optional)</Label>
+              <Input
+                id="suggestion-email"
+                type="email"
+                placeholder="your@email.com"
+                value={suggestionEmail}
+                onChange={(e) => setSuggestionEmail(e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-1">So we can follow up with you</p>
+            </div>
+            <Button 
+              onClick={handleSubmitSuggestion} 
+              className="w-full"
+              disabled={submittingSuggestion}
+            >
+              {submittingSuggestion ? "Submitting..." : "Submit Suggestion"}
+            </Button>
+          </div>
         </div>
 
         {/* Policies Section */}
