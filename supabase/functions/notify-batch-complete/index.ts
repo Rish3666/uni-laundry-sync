@@ -19,8 +19,58 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Create auth client to verify user
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error("Authentication failed", { error: userError?.message });
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Verify admin role using service client
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: roleData, error: roleError } = await supabaseService
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      console.error("Admin access denied", { userId: user.id });
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Validate input
     const validationResult = batchSchema.safeParse(await req.json());
@@ -36,10 +86,10 @@ serve(async (req) => {
 
     const { batchNumber } = validationResult.data;
 
-    console.log(`Processing batch completion notifications`);
+    console.log(`Processing batch completion notifications for batch ${batchNumber}`);
 
-    // Get all orders in this batch with QR codes
-    const { data: orders, error: ordersError } = await supabase
+    // Get all orders in this batch (using service client for full access)
+    const { data: orders, error: ordersError } = await supabaseService
       .from("orders")
       .select("user_id, customer_name, customer_email, customer_phone, order_number, delivery_qr_code")
       .eq("batch_number", batchNumber);
@@ -58,21 +108,12 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Found orders in batch for notification`);
+    console.log(`Found ${orders.length} orders in batch for notification`);
 
     // In a real application, you would:
     // 1. Send SMS notifications via Twilio, AWS SNS, or similar service
     // 2. Send push notifications via Firebase, OneSignal, or similar
     // 3. Send email notifications via SendGrid, Mailgun, or similar
-    
-    // For now, we'll just log minimal info
-    console.log(`Preparing notifications for ${orders.length} orders`);
-
-    // Here you would integrate with your notification service
-    // Example with SMS:
-    // for (const notification of notifications) {
-    //   await sendSMS(notification.phone, notification.message);
-    // }
 
     return new Response(
       JSON.stringify({
