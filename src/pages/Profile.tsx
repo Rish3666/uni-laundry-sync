@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  LogOut, 
-  QrCode, 
-  Download, 
-  MessageCircle, 
-  Mail, 
+import {
+  LogOut,
+  QrCode,
+  Download,
+  MessageCircle,
+  Mail,
   ChevronRight,
   FileText,
   Shield,
@@ -56,12 +56,12 @@ const Profile = () => {
   const { data: user } = useAuth();
   const { data: profileData, isLoading: loading } = useProfile(user?.id);
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ 
-    student_name: "", 
-    mobile_no: "", 
-    student_id: "", 
-    room_number: "", 
-    gender: "" 
+  const [formData, setFormData] = useState({
+    student_name: "",
+    mobile_no: "",
+    student_id: "",
+    room_number: "",
+    gender: ""
   });
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
@@ -90,7 +90,7 @@ const Profile = () => {
       });
 
       if (error) throw error;
-      
+
       toast.success("Thank you for your suggestion!");
       setSuggestionText("");
       setSuggestionEmail("");
@@ -119,7 +119,7 @@ const Profile = () => {
       });
 
       if (error) throw error;
-      
+
       toast.success("Message sent to admin successfully");
       setEmailMessage("");
       setEmailDialogOpen(false);
@@ -149,8 +149,10 @@ const Profile = () => {
 
   const handleUpdateProfile = async () => {
     try {
-      const validatedData = profileUpdateSchema.parse(formData);
-      
+      // Create update payload without gender
+      const { gender, ...updatePayload } = formData;
+      const validatedData = profileUpdateSchema.parse(updatePayload);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { error } = await supabase.from("profiles").update(validatedData).eq("user_id", user.id);
@@ -250,21 +252,12 @@ const Profile = () => {
           </div>
           {editing ? (
             <div className="space-y-4">
-              <div><Label>Name</Label><Input value={formData.student_name} onChange={e => setFormData({...formData, student_name: e.target.value})} /></div>
-              <div><Label>Mobile</Label><Input value={formData.mobile_no} onChange={e => setFormData({...formData, mobile_no: e.target.value})} /></div>
-              <div><Label>ID</Label><Input value={formData.student_id} onChange={e => setFormData({...formData, student_id: e.target.value})} /></div>
-              <div><Label>Room Number</Label><Input value={formData.room_number} onChange={e => setFormData({...formData, room_number: e.target.value})} /></div>
+              <div><Label>Name</Label><Input value={formData.student_name} onChange={e => setFormData({ ...formData, student_name: e.target.value })} /></div>
+              <div><Label>Mobile</Label><Input value={formData.mobile_no} onChange={e => setFormData({ ...formData, mobile_no: e.target.value })} /></div>
+              <div><Label>ID</Label><Input value={formData.student_id} onChange={e => setFormData({ ...formData, student_id: e.target.value })} /></div>
               <div>
-                <Label>Gender</Label>
-                <select
-                  value={formData.gender}
-                  onChange={e => setFormData({...formData, gender: e.target.value})}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background"
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
+                <Label>Room Number</Label>
+                <Input value={formData.room_number} onChange={e => setFormData({ ...formData, room_number: e.target.value })} />
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleUpdateProfile} className="flex-1">Save</Button>
@@ -292,11 +285,11 @@ const Profile = () => {
         </div>
 
         {isAdmin && <Button onClick={() => navigate("/admin")} className="w-full">Admin Dashboard</Button>}
-        
+
         <div className="bg-card rounded-lg p-6 shadow-card space-y-4">
           <h2 className="text-lg font-semibold">Contact Support</h2>
           <a href="https://wa.me/919182199961" target="_blank" rel="noopener noreferrer" className="block">
-            <Button 
+            <Button
               className="w-full bg-green-500 hover:bg-green-600 text-white"
               size="lg"
               type="button"
@@ -305,10 +298,10 @@ const Profile = () => {
               Message Admin on WhatsApp
             </Button>
           </a>
-          
+
           <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 className="w-full"
                 size="lg"
                 variant="outline"
@@ -336,8 +329,8 @@ const Profile = () => {
                     className="mt-2"
                   />
                 </div>
-                <Button 
-                  onClick={handleSendEmail} 
+                <Button
+                  onClick={handleSendEmail}
                   className="w-full"
                   disabled={sendingEmail}
                 >
@@ -349,7 +342,7 @@ const Profile = () => {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 className="w-full"
                 size="lg"
                 variant="outline"
@@ -389,8 +382,8 @@ const Profile = () => {
                   />
                   <p className="text-xs text-muted-foreground mt-1">So we can follow up with you</p>
                 </div>
-                <Button 
-                  onClick={handleSubmitSuggestion} 
+                <Button
+                  onClick={handleSubmitSuggestion}
                   className="w-full"
                   disabled={submittingSuggestion}
                 >
@@ -404,7 +397,7 @@ const Profile = () => {
         {/* Policies Section */}
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-muted-foreground px-1">Policies</h2>
-          
+
           <MenuButton icon={FileText} label="Terms & Conditions" onClick={() => setTermsOpen(true)} />
           <MenuButton icon={Shield} label="Privacy Policy" onClick={() => setPrivacyOpen(true)} />
           <MenuButton icon={XCircle} label="Cancellation Policy" onClick={() => setCancellationOpen(true)} />

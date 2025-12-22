@@ -49,7 +49,6 @@ export const profileUpdateSchema = z.object({
   mobile_no: phoneValidation,
   student_id: z.string().trim().max(50, "Student ID must be less than 50 characters"),
   room_number: z.string().trim().max(20, "Room number must be less than 20 characters"),
-  gender: z.enum(["male", "female", ""], { errorMap: () => ({ message: "Invalid gender selection" }) }),
 });
 
 export type SignupFormData = z.infer<typeof signupSchema>;
